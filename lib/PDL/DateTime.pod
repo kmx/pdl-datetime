@@ -121,27 +121,32 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
 =head2 dt_ymd
 
  my ($y, $m, $d) = $p->dt_ymd;
- # returns 3 LongLong piddles
+ # returns 3 Long piddles
 
 =head2 dt_hours
 
  my $H = $p->dt_hours;
- # returns LongLong piddle
+ # returns Long piddle (values 0 .. 23)
 
 =head2 dt_minutes
 
  my $M = $p->dt_minutes;
- # returns LongLong piddle
+ # returns Long piddle (values 0 .. 59)
 
 =head2 dt_seconds
 
  my $S = $p->dt_seconds;
- # returns LongLong piddle
+ # returns Long piddle (values 0 .. 59)
 
 =head2 dt_microseconds
 
  my $U = $p->dt_microseconds;
- # returns LongLong piddle
+ # returns Long piddle (values 0 .. 999_999)
+
+=head2 dt_weekdays
+
+ my $wd = $p->dt_weekdays;
+ # returns Long piddle (values 0=Mon .. 6=Sun)
 
 =head2 dt_align
 

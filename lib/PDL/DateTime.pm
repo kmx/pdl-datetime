@@ -145,27 +145,33 @@ sub dt_ymd {
   my $self = shift;
   my $rdate = $self->double_ratadie;
   my ($y, $m, $d) = _ratadie2ymd($rdate);
-  return ($y, $m, $d);
+  return (long($y), long($m), long($d));
 }
 
 sub dt_hours {
   my $self = shift;
-  return ($self - ($self % 3_600_000_000)) / 3_600_000_000;
+  return PDL->new(long((($self - ($self % 3_600_000_000)) / 3_600_000_000) % 24));
 }
 
 sub dt_minutes {
   my $self = shift;
-  return ($self - ($self % 60_000_000)) / 60_000_000;
+  return PDL->new(long((($self - ($self % 60_000_000)) / 60_000_000) % 60));
 }
 
 sub dt_seconds {
   my $self = shift;
-  return ($self - ($self % 1_000_000)) / 1_000_000;
+  return PDL->new(long((($self - ($self % 1_000_000)) / 1_000_000) % 60));
 }
 
 sub dt_microseconds {
   my $self = shift;
-  return $self % 1_000_000;
+  return PDL->new(long($self % 1_000_000));
+}
+
+sub dt_weekdays {
+  my $self = shift;
+  my $days = ($self - ($self % 86_400_000_000)) / 86_400_000_000;
+  return PDL->new(long(($days + 3) % 7)); # +3 ... 0=Mon, +4 ... 0=Sun
 }
 
 sub dt_add {
@@ -382,7 +388,7 @@ sub _ratadie2ymd {
   $y += $m12;
   $m -= $m12 * 12;
 
-  return (longlong($y), longlong($m), longlong($d));
+  return ($y, $m, $d);
 }
 
 1;
