@@ -13,6 +13,7 @@ use PDL::Primitive;
 use PDL::Basic qw(sequence);
 use PDL::Math  qw(floor);
 use PDL::Core  qw(longlong long double);
+use Time::Moment;
 
 use overload '""' => \&_stringify;
 
