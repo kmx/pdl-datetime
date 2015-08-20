@@ -8,11 +8,11 @@ L<PDL::DateTime> is a subclass of L<PDL> piddle:
 
 =over
 
-=item its PDL type is always C<LongLong> (64-bit signed integer)
+=item * its PDL type is always C<LongLong> (64-bit signed integer)
 
-=item stored values are microseconds since C<1970-01-01T00:00:00.000000Z> (can be both positive or negative)
+=item * stored values are microseconds since C<1970-01-01T00:00:00.000000Z> (can be both positive or negative)
 
-=item it is still a piddle so you can do all usual PDL arithmetic + L<PDL::DateTime> defines some new methods (see below)
+=item * it is still a piddle so you can do all usual PDL arithmetic + L<PDL::DateTime> defines some new methods (see below)
 
 =back
 
@@ -20,19 +20,19 @@ L<PDL::DateTime> is a subclass of L<PDL> piddle:
 
 =over
 
-=item supported datetimes are from C<0001-01-01T00:00:00.000000Z> to C<9999-12-31T23:59:59.999999Z>
+=item * supported datetimes are from C<0001-01-01T00:00:00.000000Z> to C<9999-12-31T23:59:59.999999Z>
 
-=item leap seconds are completely ignored
+=item * leap seconds are completely ignored
 
-=item no timezone handling (module uses UTC)
+=item * no timezone handling (module uses UTC)
 
-=item export via L</double_ratadie>, L</double_serialdate> and L</double_juliandate> loses precision (miliseconds only)
+=item * export via L</double_ratadie>, L</double_serialdate> and L</double_juliandate> loses precision (miliseconds only)
 
-=item import via L</new_from_ratadie>, L</new_from_serialdate> and L</new_from_juliandate> has only miliseconds precision
+=item * import via L</new_from_ratadie>, L</new_from_serialdate> and L</new_from_juliandate> has only miliseconds precision
 
-=item this module works only on perls with 64-bit integers, check C<perl -V:ivsize> (should be C<ivsize='8'>)
+=item * this module works only on perls with 64-bit integers, check C<perl -V:ivsize> (should be C<ivsize='8'>)
 
-=item no chance for nanoseconds precision, it is simply not possible with current module design
+=item * no chance for nanoseconds precision, it is simply not possible with current module design
 
 =back
 
@@ -128,22 +128,22 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
  my $H = $p->dt_hours;
  # returns LongLong piddle
 
-=head dt_minutes
+=head2 dt_minutes
 
  my $M = $p->dt_minutes;
  # returns LongLong piddle
 
-=head dt_seconds
+=head2 dt_seconds
 
  my $S = $p->dt_seconds;
  # returns LongLong piddle
 
-=head dt_microseconds
+=head2 dt_microseconds
 
  my $U = $p->dt_microseconds;
  # returns LongLong piddle
 
-=head dt_align
+=head2 dt_align
 
  my $p->dt_align($unit);
  # $unit .. 'week', 'day', 'hour', 'minute', 'second'
@@ -152,7 +152,7 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
  # turns e.g. 2015-08-20T23:24:25.123456Z
  # into       2015-08-20T23:24:00.000000Z
 
-=head dt_add
+=head2 dt_add
 
  my $p->dt_align($num, $unit);
  # adds $num datetime units
@@ -169,12 +169,12 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
  my $datetime = $p->dt_at(@coords, $format)
  # returns ISO 8601 date time string for value at given piddle co-ordinates
 
-=head dt_set
+=head2 dt_set
 
  $p->dt_set(@coords, $datetime_or_epoch);
  # sets $datetime_or_epoch as value at given piddle co-ordinates
 
-=head dt_unpdl
+=head2 dt_unpdl
 
  my $array = $p->dt_unpdl;
  my $array = $p->dt_unpdl('%y-%m-%d %H:%M:%S');
