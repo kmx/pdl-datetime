@@ -1,0 +1,200 @@
+=head1 NAME
+
+PDL::DateTime - piddle for keeping high precision (microsecond) timestamps
+
+=head1 DESCRIPTION
+
+L<PDL::DateTime> is a subclass of L<PDL> piddle:
+
+=over
+
+=item its PDL type is always C<LongLong> (64-bit signed integer)
+
+=item stored values are microseconds since C<1970-01-01T00:00:00.000000Z> (can be both positive or negative)
+
+=item it is still a piddle so you can do all usual PDL arithmetic + L<PDL::DateTime> defines some new methods (see below)
+
+=back
+
+=head1 LIMITATIONS
+
+=over
+
+=item supported datetimes are from C<0001-01-01T00:00:00.000000Z> to C<9999-12-31T23:59:59.999999Z>
+
+=item leap seconds are completely ignored
+
+=item no timezone handling (module uses UTC)
+
+=item export via L</double_ratadie>, L</double_serialdate> and L</double_juliandate> loses precision (miliseconds only)
+
+=item import via L</new_from_ratadie>, L</new_from_serialdate> and L</new_from_juliandate> has only miliseconds precision
+
+=item this module works only on perls with 64-bit integers, check C<perl -V:ivsize> (should be C<ivsize='8'>)
+
+=item no chance for nanoseconds precision, it is simply not possible with current module design
+
+=back
+
+=head1 FUNCTIONS
+
+=head2 new
+
+ my $p = PDL::DateTime->new($pdl_or_array_ref);
+ # input data = microseconds since 1970-01-01T00:00:00Z (positive or negative)
+
+=head2 new_from_epoch
+
+ my $p = PDL::DateTime->new_from_epoch($pdl_or_array_ref);
+ # input data = seconds (int or double) since 1970-01-01T00:00:00Z (positive or negative)
+
+=head2 new_from_ratadie
+
+ my $p = PDL::DateTime->new_from_ratadie($pdl_or_array_ref);
+ # BEWARE: loses precisions (miliseconds only)
+ # input data = days (int or double) since January 1, 0001 AD 00:00
+
+See L<https://en.wikipedia.org/wiki/Rata_Die>
+
+=head2 new_from_serialdate
+
+ my $p = PDL::DateTime->new_from_serialdate($pdl_or_array_ref);
+ # BEWARE: loses precisions (miliseconds only)
+ # input data = days (int or double) since January 1, 0000 AD 00:00
+
+See L<http://www.mathworks.com/help/finance/handling-and-converting-dates.html>
+
+=head2 new_from_juliandate
+
+ my $p = PDL::DateTime->new_from_juliandate($pdl_or_array_ref);
+ # BEWARE: loses precisions (miliseconds only)
+ # input data = days (int or double) since November 24, 4714 BC 12:00
+
+See L<https://en.wikipedia.org/wiki/Julian_day>
+
+=head2 new_from_datetime
+
+ my $p = PDL::DateTime->new_from_datetime($array_ref);
+ # input data = array of ISO 8601 date time strings
+
+Supported formats - see L<Time::Moment|Time::Moment/from_string>.
+
+=head2 new_from_parts
+
+ my $p = PDL::DateTime->new_from_parts($y, $m, $d, $H, $M, $S, $U);
+ # all arguments are either piddles or array refs
+ # $y .. years, $m .. months, $d .. days
+ # $H .. hours, $M .. minutes
+ # $S .. seconds, $U .. microseconds
+
+=head2 new_sequence
+
+ my $p = PDL::DateTime->new_sequence($start, $count, $unit, $step);
+ # $start .. ISO 8601 date time string (starting datetime) or 'now'
+ # $count .. length of the sequence (incl. starting point)
+ # $unit  .. step unit 'year', 'month', 'week', 'day', 'hour', 'minute', 'second'
+ # $step  .. how many units there are between two seq elements (default: 1)
+
+=head2 double_epoch
+
+ my $dbl = $p->double_epoch;
+ # returns Double piddle
+
+=head2 double_ratadie
+
+ my $dbl = $p->double_ratadie;
+ # BEWARE: loses precisions (miliseconds only)
+ # returns Double piddle
+
+=head2 double_serialdate
+
+ my $dbl = $p->double_serialdate;
+ # BEWARE: loses precisions (miliseconds only)
+ # returns Double piddle
+
+=head2 double_juliandate
+
+ my $dbl = $p->double_juliandate;
+ # BEWARE: loses precisions (miliseconds only)
+ # returns Double piddle
+
+=head2 dt_ymd
+
+ my ($y, $m, $d) = $p->dt_ymd;
+ # returns 3 LongLong piddles
+
+=head2 dt_hours
+
+ my $H = $p->dt_hours;
+ # returns LongLong piddle
+
+=head dt_minutes
+
+ my $M = $p->dt_minutes;
+ # returns LongLong piddle
+
+=head dt_seconds
+
+ my $S = $p->dt_seconds;
+ # returns LongLong piddle
+
+=head dt_microseconds
+
+ my $U = $p->dt_microseconds;
+ # returns LongLong piddle
+
+=head dt_align
+
+ my $p->dt_align($unit);
+ # $unit .. 'week', 'day', 'hour', 'minute', 'second'
+
+ my $p->dt_align('minute');
+ # turns e.g. 2015-08-20T23:24:25.123456Z
+ # into       2015-08-20T23:24:00.000000Z
+
+=head dt_add
+
+ my $p->dt_align($num, $unit);
+ # adds $num datetime units
+ # $unit .. 'week', 'day', 'hour', 'minute', 'second'
+
+ my $p->dt_add(2, 'day');
+ # turns e.g. 2015-08-20T23:24:25.123456Z
+ # into       2015-08-22T23:24:25.123456Z
+
+=head2 dt_at
+
+ my $datetime = $p->dt_at(@coords)
+ #or
+ my $datetime = $p->dt_at(@coords, $format)
+ # returns ISO 8601 date time string for value at given piddle co-ordinates
+
+=head dt_set
+
+ $p->dt_set(@coords, $datetime_or_epoch);
+ # sets $datetime_or_epoch as value at given piddle co-ordinates
+
+=head dt_unpdl
+
+ my $array = $p->dt_unpdl;
+ my $array = $p->dt_unpdl('%y-%m-%d %H:%M:%S');
+ # returns perl arrayref with ISO 8601 date time strings
+
+ my $array = $p->dt_unpdl('epoch');
+ my $array = $p->dt_unpdl('epoch_int');
+ # returns perl arrayref with epoch timestamps (as double or integer value)
+
+ my $array = $p->dt_unpdl('Time::Moment');
+ # returns perl arrayref with Time::Moment objects
+
+=head1 SEE ALSO
+
+L<PDL>
+
+=head1 LICENSE
+
+This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+=head1 COPYRIGHT
+
+2015+ KMX E<lt>kmx@cpan.orgE<gt>

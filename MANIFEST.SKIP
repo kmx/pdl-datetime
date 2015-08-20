@@ -1,0 +1,27 @@
+# Avoid version control files.
+\B\.svn\b
+\B\.git\b
+\B\.gitignore\b
+
+# Avoid Makemaker generated and utility files.
+\bblib/
+\bMakeMaker-\d
+\bpm_to_blib\.ts$
+\bpm_to_blib$
+\bblibdirs\.ts$
+\bMakefile$
+\bMANIFEST\.bak$
+\bMANIFEST\.SKIP$
+\bMETA_new\.json$
+\bMETA_new\.yml$
+\bMYMETA\.yml$
+\bMYMETA\.json$
+
+# Avoid temp and backup files.
+\.old$
+\.tmp$
+\.bak$
+^tmp
+
+# Avoid our own built files.
+\APDL-
