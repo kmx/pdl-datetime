@@ -48,7 +48,7 @@ sub new_from_epoch {
   my ($class, $ep, %opts) = @_;
   my $self = $class->initialize(%opts);
   # convert epoch timestamp in seconds to microseconds
-  $self->{PDL} = longlong(floor(double($ep) * 1_000_000 + 0.5));
+  $self->{PDL} = longlong(floor(double($ep) * 1_000 + 0.5)) * 1000;
   return $self;
 }
 
@@ -79,6 +79,13 @@ sub new_from_juliandate {
   return $self;
 }
 
+sub new_from_datetime {
+  my ($class, $array, %opts) = @_;
+  my $self = $class->initialize(%opts);
+  $self->{PDL} = longlong _datetime_to_jumboepoch($array);
+  return $self;
+}
+
 sub new_from_parts {
   my ($class, $y, $m, $d, $H, $M, $S, $U, %opts) = @_;
   die "new_from_parts: args - y, m, d - are mandatory" unless defined $y && defined $m && defined $d;
@@ -92,6 +99,14 @@ sub new_from_parts {
   $epoch += floor($U)        if defined $U;
   $self->{PDL} = longlong($epoch);
   return $self;
+}
+
+sub new_from_ymd {
+  my ($class, $ymd) = @_;
+  my $y = floor(($ymd/10000) % 10000);
+  my $m = floor(($ymd/100) % 100);
+  my $d = floor($ymd % 100);
+  return $class->new_from_parts($y, $m, $d);
 }
 
 sub new_sequence {
@@ -118,7 +133,8 @@ sub new_sequence {
 sub double_epoch {
   my $self = shift;
   # EP = JUMBOEPOCH / 1_000_000;
-  return double($self) / 1_000_000;
+  my $epoch_milisec = ($self - ($self % 1000)) / 1000; # BEWARE: precision only in miliseconds!
+  return double($epoch_milisec) / 1_000;
 }
 
 sub double_ratadie {
@@ -146,66 +162,105 @@ sub dt_ymd {
   my $self = shift;
   my $rdate = $self->double_ratadie;
   my ($y, $m, $d) = _ratadie2ymd($rdate);
-  return (long($y), long($m), long($d));
+  return (short($y), byte($m), byte($d));
 }
 
-sub dt_hours {
+sub dt_hour {
   my $self = shift;
-  return PDL->new(long((($self - ($self % 3_600_000_000)) / 3_600_000_000) % 24));
+  return PDL->new(byte((($self - ($self % 3_600_000_000)) / 3_600_000_000) % 24));
 }
 
-sub dt_minutes {
+sub dt_minute {
   my $self = shift;
-  return PDL->new(long((($self - ($self % 60_000_000)) / 60_000_000) % 60));
+  return PDL->new(byte((($self - ($self % 60_000_000)) / 60_000_000) % 60));
 }
 
-sub dt_seconds {
+sub dt_second {
   my $self = shift;
-  return PDL->new(long((($self - ($self % 1_000_000)) / 1_000_000) % 60));
+  return PDL->new(byte((($self - ($self % 1_000_000)) / 1_000_000) % 60));
 }
 
-sub dt_microseconds {
+sub dt_microsecond {
   my $self = shift;
   return PDL->new(long($self % 1_000_000));
 }
 
-sub dt_weekdays {
+sub dt_day_of_week {
   my $self = shift;
   my $days = ($self - ($self % 86_400_000_000)) / 86_400_000_000;
-  return PDL->new(long(($days + 3) % 7)); # +3 ... 0=Mon, +4 ... 0=Sun
+  return PDL->new(byte(($days + 3) % 7) + 1); # 1..Mon, 7..Sun
+}
+
+sub dt_day_of_year {
+  my $self = shift;
+  return PDL->new(long, _jumbo2ratadie($self) - _jumbo2ratadie($self->dt_truncate('year')) + 1);
 }
 
 sub dt_add {
-  my ($self, $num, $unit) = @_;
-  # XXX-TODO missing support for 'month' and 'year'
-  die "dt_add: missing argument" if !defined $num || !$unit;
-  my $inc = $INC_SECONDS{$unit};
-  die "dt_add: invalid unit '$unit'" if !$inc;
+  my ($self, %args) = @_;
   if ($self->is_inplace) {
     $self->set_inplace(0);
-    my $add = longlong(floor($num * $inc * 1_000_000 + 0.5));
-    $self->inplace->plus($add, 0);
+    for my $unit (keys %args) {
+      my $num = $args{$unit};
+      if ($unit eq 'month') {
+        $self->{PDL} = $self->_plus_delta_m($num);
+      }
+      elsif ($unit eq 'year') {
+        $self->{PDL} = $self->_plus_delta_m($num * 12);
+      }
+      elsif (my $inc = $INC_SECONDS{$unit}) {
+        my $add = longlong(floor($num * $inc * 1_000_000 + 0.5));
+        $self->inplace->plus($add, 0);
+      }
+    }
     return $self;
   }
   else {
-    return $self + longlong(floor($num * $inc * 1_000_000 + 0.5));
+    my $rv = $self;
+    for my $unit (keys %args) {
+      my $num = $args{$unit};
+      if ($unit eq 'month') {
+        $rv += $rv->_plus_delta_m($num);
+      }
+      elsif ($unit eq 'year') {
+        $rv += $rv->_plus_delta_m($num * 12);
+      }
+      elsif(my $inc = $INC_SECONDS{$unit}) {
+        $rv += longlong(floor($num * $inc * 1_000_000 + 0.5));
+      }
+    }
+    return $rv;
   }
 }
 
-sub dt_align {
+sub dt_truncate {
   my ($self, $unit) = @_;
-  # XXX-TODO missing support for 'month' and 'year'
-  die "dt_align: missing unit" if !$unit;
-  my $inc = $INC_SECONDS{$unit};
-  die "dt_align: invalid unit '$unit'" if !$inc;
   if ($self->is_inplace) {
     $self->set_inplace(0);
-    my $sub = $self % ($inc * 1_000_000);
-    $self->inplace->minus($sub, 0);
+    return $self unless defined $unit;
+    if ($unit eq 'year') {
+      $self->{PDL} = $self->_allign_m_y(0, 1);
+    }
+    elsif ($unit eq 'month') {
+      $self->{PDL} = $self->_allign_m_y(1, 0);
+    }
+    elsif (my $inc = $INC_SECONDS{$unit}) {
+      my $sub = $self % ($inc * 1_000_000);
+      $self->inplace->minus($sub, 0);
+    }
     return $self;
   }
   else {
-    return $self - $self % ($inc * 1_000_000);
+    return unless defined $unit;
+    if ($unit eq 'month') {
+      return $self->_allign_m_y(1, 0);
+    }
+    elsif ($unit eq 'year') {
+      return $self->_allign_m_y(0, 1);
+    }
+    elsif (my $inc = $INC_SECONDS{$unit}) {
+      return $self - $self % ($inc * 1_000_000);
+    }
   }
 }
 
@@ -231,11 +286,12 @@ sub dt_unpdl {
     return (double($self) / 1_000_000)->unpdl;
   }
   elsif ($fmt eq 'epoch_int') {
+    #XXX-TODO longlong(($self - ($self % 1000000)) / 1000000)->unpdl;
     return (longlong(floor(double($self) / 1_000_000)))->unpdl;
   }
   else {
     my $array = $self->unpdl;
-    _jumboepoch_to_datetime($array, $fmt); # recursive/inplace!
+    _jumboepoch_to_datetime($array, $fmt, 1); # change $array inplace!
     return $array;
   }
 }
@@ -265,6 +321,26 @@ sub _autodetect_strftime_format {
   else {
     return "%Y-%m-%dT%H:%M:%S.%6N";
   }
+}
+
+sub _plus_delta_m {
+  my ($self, $delta_m) = @_;
+  my $microsec = $self % 1_000_000_000;
+  my $rdate = $self->double_ratadie;
+  my ($y, $m, $d) = _ratadie2ymd($rdate);
+  $rdate = _ymd2ratadie($y, $m, $d, $delta_m);
+  return longlong(floor($rdate) - 719163) * 86_400_000_000 + $microsec;
+}
+
+sub _allign_m_y {
+  my ($self, $mflag, $yflag) = @_;
+  my $microsec = $self % 1_000_000_000;
+  my $rdate = $self->double_ratadie;
+  my ($y, $m, $d) = _ratadie2ymd($rdate);
+  $m .= 1 if $mflag;
+  $y .= 1 if $yflag;
+  $rdate = _ymd2ratadie($y, $m, $d);
+  return longlong(floor($rdate) - 719163) * 86_400_000_000 + $microsec;
 }
 
 ### private functions
@@ -297,33 +373,57 @@ sub _fix_datetime_value {
 }
 
 sub _datetime_to_jumboepoch {
-  my $dt = shift;
+  my ($dt, $inplace) = @_;
   my $tm;
-  if (looks_like_number $dt) {
-    return int POSIX::floor($dt * 1_000_000 + 0.5);
+  if (ref $dt eq 'ARRAY') {
+    my @new;
+    for (@$dt) {
+      my $s = _datetime_to_jumboepoch($_);
+      if ($inplace) {
+        $_ = ref $_ ? undef : $s;
+      }
+      else {
+        push @new, $s;
+      }
+    }
+    return \@new if $inplace;
   }
-  elsif (!ref $dt) {
-    $dt = _fix_datetime_value($dt);
-    $tm = eval { Time::Moment->from_string($dt, lenient=>1) };
+  else {
+    if (looks_like_number $dt) {
+      return int POSIX::floor($dt * 1_000_000 + 0.5);
+    }
+    elsif (!ref $dt) {
+      $dt = _fix_datetime_value($dt);
+      $tm = eval { Time::Moment->from_string($dt, lenient=>1) };
+    }
+    elsif (ref $dt eq 'DateTime' || ref $dt eq 'Time::Piece') {
+      $tm = eval { Time::Moment->from_object($dt) };
+    }
+    elsif (ref $dt eq 'Time::Moment') {
+      $tm = $dt;
+    }
+    return undef unless $tm;
+    my $ep = $tm->epoch;
+    my $us = $tm->microsecond;
+    return int($ep * 1_000_000 + $us);
   }
-  elsif (ref $dt eq 'DateTime' || ref $dt eq 'Time::Piece') {
-    $tm = eval { Time::Moment->from_object($dt) };
-  }
-  elsif (ref $dt eq 'Time::Moment') {
-    $tm = $dt;
-  }
-  return undef unless $tm;
-  return int($tm->epoch * 1_000_000 + $tm->microsecond);
 }
 
 sub _jumboepoch_to_datetime {
-  my ($v, $fmt) = @_;
+  my ($v, $fmt, $inplace) = @_;
   return 'BAD' unless defined $v;
-  if (ref $v eq 'ARRAY') { # recursive/inplace!
+  if (ref $v eq 'ARRAY') {
+    my @new;
     for (@$v) {
       my $s = _jumboepoch_to_datetime($_, $fmt);
-      $_ = $s if !ref $_;
+      if ($inplace) {
+        $_ = ref $_ ? undef : $s;
+      }
+      else {
+        push @new, $s;
+      }
     }
+    return \@new if $inplace;
   }
   elsif (!ref $v) {
     my $ns = ($v % 1_000_000) * 1_000;
@@ -345,19 +445,34 @@ my $DAYS_PER_4_YEARS    =   1_461;
 my $MAR_1_TO_DEC_31     =     306;
 
 sub _ymd2ratadie {
-  my ($y, $m, $d) = @_;
+  my ($y, $m, $d, $delta_m) = @_;
   # based on Rata Die calculation from https://metacpan.org/source/DROLSKY/DateTime-1.10/lib/DateTime.xs#L151
   # RD: 1       => 0001-01-01
-  # RD: 2       => 0001-01-01
+  # RD: 2       => 0001-01-02
   # RD: 719163  => 1970-01-01
   # RD: 730120  => 2000-01-01
   # RD: 2434498 => 6666-06-06
   # RD: 3652059 => 9999-12-31
 
+  if (defined $delta_m) {
+    # handle months + years
+    $m->inplace->plus($delta_m);
+    my $extra_y += $m / 12;
+    $m->inplace->mod(12);
+    $y->inplace->plus($extra_y);
+    # fix days
+    my $dec_by_one = ($d==31) * (($m==4) + ($m==6) + ($m==9) + ($m==11));
+    # 1800, 1900, 2100, 2200, 2300 - common; 2000, 2400 - leap
+    my $is_nonleap_yr = (($y % 4)!=0) + (($y % 100)==0) - (($y % 400)==0);
+    my $dec_nonleap_feb = ($m==2) * ($d>28) * $is_nonleap_yr * ($d-28);
+    my $dec_leap_feb    = ($m==2) * ($d>29) * (1 - $is_nonleap_yr) * ($d-29);
+    $d->inplace->minus($dec_by_one + $dec_leap_feb + $dec_nonleap_feb);
+  }
+
   my $rdate = $d; # may contain day fractions
-  $rdate = $rdate->setbadif(($y < 1) + ($y > 9999));
-  $rdate = $rdate->setbadif(($m < 1) + ($m > 12));
-  $rdate = $rdate->setbadif(($d < 1) + ($d >= 32));  # not 100% correct (max. can be 31.9999999)
+  $rdate->setbadif(($y < 1) + ($y > 9999));
+  $rdate->setbadif(($m < 1) + ($m > 12));
+  $rdate->setbadif(($d < 1) + ($d >= 32));  # not 100% correct (max. can be 31.9999999)
 
   my $m2 = ($m <= 2);
   $y -= $m2;
@@ -367,7 +482,7 @@ sub _ymd2ratadie {
   $rdate += floor($y % 100 * $DAYS_PER_4_YEARS / 4);
   $rdate += floor($y / 100) * $DAYS_PER_100_YEARS + floor($y / 400);
   $rdate -= $MAR_1_TO_DEC_31;
-  return $rdate; # double or longlong
+  return $rdate;
 }
 
 sub _ratadie2ymd {

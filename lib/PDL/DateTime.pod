@@ -26,9 +26,9 @@ L<PDL::DateTime> is a subclass of L<PDL> piddle:
 
 =item * no timezone handling (module uses UTC)
 
-=item * export via L</double_ratadie>, L</double_serialdate> and L</double_juliandate> loses precision (miliseconds only)
+=item * export via L</double_epoch>, L</double_ratadie>, L</double_serialdate> and L</double_juliandate> loses precision (miliseconds only)
 
-=item * import via L</new_from_ratadie>, L</new_from_serialdate> and L</new_from_juliandate> has only miliseconds precision
+=item * import via L</new_from_epoch>, L</new_from_ratadie>, L</new_from_serialdate> and L</new_from_juliandate> has only miliseconds precision
 
 =item * this module works only on perls with 64-bit integers, check C<perl -V:ivsize> (should be C<ivsize='8'>)
 
@@ -41,17 +41,19 @@ L<PDL::DateTime> is a subclass of L<PDL> piddle:
 =head2 new
 
  my $p = PDL::DateTime->new($pdl_or_array_ref);
- # input data = microseconds since 1970-01-01T00:00:00Z (positive or negative)
+ # input data = microseconds (LongLong) since 1970-01-01T00:00:00Z (positive or negative)
+ # whatever input data are always converted to LongLong
 
 =head2 new_from_epoch
 
  my $p = PDL::DateTime->new_from_epoch($pdl_or_array_ref);
+ # BEWARE: precision in miliseconds only!
  # input data = seconds (int or double) since 1970-01-01T00:00:00Z (positive or negative)
 
 =head2 new_from_ratadie
 
  my $p = PDL::DateTime->new_from_ratadie($pdl_or_array_ref);
- # BEWARE: loses precisions (miliseconds only)
+ # BEWARE: precision in miliseconds only!
  # input data = days (int or double) since January 1, 0001 AD 00:00
 
 See L<https://en.wikipedia.org/wiki/Rata_Die>
@@ -59,7 +61,7 @@ See L<https://en.wikipedia.org/wiki/Rata_Die>
 =head2 new_from_serialdate
 
  my $p = PDL::DateTime->new_from_serialdate($pdl_or_array_ref);
- # BEWARE: loses precisions (miliseconds only)
+ # BEWARE: precision in miliseconds only!
  # input data = days (int or double) since January 1, 0000 AD 00:00
 
 See L<http://www.mathworks.com/help/finance/handling-and-converting-dates.html>
@@ -67,7 +69,7 @@ See L<http://www.mathworks.com/help/finance/handling-and-converting-dates.html>
 =head2 new_from_juliandate
 
  my $p = PDL::DateTime->new_from_juliandate($pdl_or_array_ref);
- # BEWARE: loses precisions (miliseconds only)
+ # BEWARE: precision in miliseconds only!
  # input data = days (int or double) since November 24, 4714 BC 12:00
 
 See L<https://en.wikipedia.org/wiki/Julian_day>
@@ -83,9 +85,20 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
 
  my $p = PDL::DateTime->new_from_parts($y, $m, $d, $H, $M, $S, $U);
  # all arguments are either piddles or array refs
- # $y .. years, $m .. months, $d .. days
- # $H .. hours, $M .. minutes
- # $S .. seconds, $U .. microseconds
+ # $y .. years (1..9999)
+ # $m .. months (1..12)
+ # $d .. days (1..31)
+ # $H .. hours (0..23)
+ # $M .. minutes (0..59)
+ # $S .. seconds (0..59)
+ # $U .. microseconds (0..999999)
+
+=head2 new_from_ymd
+
+ my $p = PDL::DateTime->new_from_ymd($ymd);
+ # BEWARE: handles only dates!
+ # $ymd (piddle or array ref) with dates like:
+ # [ 20150831, 20150901, 20150902 ]
 
 =head2 new_sequence
 
@@ -98,6 +111,7 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
 =head2 double_epoch
 
  my $dbl = $p->double_epoch;
+ # BEWARE: loses precisions (miliseconds only)
  # returns Double piddle
 
 =head2 double_ratadie
@@ -123,49 +137,62 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
  my ($y, $m, $d) = $p->dt_ymd;
  # returns 3 Long piddles
 
-=head2 dt_hours
+=head2 dt_hour
 
- my $H = $p->dt_hours;
+ my $H = $p->dt_hour;
  # returns Long piddle (values 0 .. 23)
 
-=head2 dt_minutes
+=head2 dt_minute
 
- my $M = $p->dt_minutes;
+ my $M = $p->dt_minute;
  # returns Long piddle (values 0 .. 59)
 
-=head2 dt_seconds
+=head2 dt_second
 
- my $S = $p->dt_seconds;
+ my $S = $p->dt_second;
  # returns Long piddle (values 0 .. 59)
 
-=head2 dt_microseconds
+=head2 dt_microsecond
 
- my $U = $p->dt_microseconds;
+ my $U = $p->dt_microsecond;
  # returns Long piddle (values 0 .. 999_999)
 
-=head2 dt_weekdays
+=head2 dt_day_of_week
 
- my $wd = $p->dt_weekdays;
- # returns Long piddle (values 0=Mon .. 6=Sun)
+ my $wd = $p->dt_day_of_week;
+ # returns Long piddle (values 1=Mon .. 7=Sun)
 
-=head2 dt_align
+=head2 dt_day_of_year
 
- my $p->dt_align($unit);
- # $unit .. 'week', 'day', 'hour', 'minute', 'second'
-
- my $p->dt_align('minute');
- # turns e.g. 2015-08-20T23:24:25.123456Z
- # into       2015-08-20T23:24:00.000000Z
+ my $wd = $p->dt_day_of_year;
+ # returns Long piddle (values 1..366)
 
 =head2 dt_add
 
- my $p->dt_align($num, $unit);
+ my $p->dt_add($num, $unit);
  # adds $num datetime units
- # $unit .. 'week', 'day', 'hour', 'minute', 'second'
+ # $unit .. "year", "month", "week", "day", "hour", "minute", "second"
 
- my $p->dt_add(2, 'day');
+ my $p->dt_add(day => 2);
  # turns e.g. 2015-08-20T23:24:25.123456Z
  # into       2015-08-22T23:24:25.123456Z
+
+ my $p->dt_add(day => 2, year => 3, month => 1);
+ # turns e.g. 2015-08-20T23:24:25.123456Z
+ # into       2018-09-22T23:24:25.123456Z
+
+Note: supports C<inplace>.
+
+=head2 dt_truncate
+
+ my $p->dt_truncate($unit);
+ # $unit .. "year", "month", "week", "day", "hour", "minute", "second"
+
+ my $p->dt_truncate('minute');
+ # turns e.g. 2015-08-20T23:24:25.123456Z
+ # into       2015-08-20T23:24:00.000000Z
+
+Note: supports C<inplace>.
 
 =head2 dt_at
 
