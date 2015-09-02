@@ -47,6 +47,7 @@ sub new {
 sub new_from_epoch {
   my ($class, $ep, %opts) = @_;
   my $self = $class->initialize(%opts);
+  $ep = double($ep) if ref $ep eq 'ARRAY';
   # convert epoch timestamp in seconds to microseconds
   $self->{PDL} = longlong(floor(double($ep) * 1_000 + 0.5)) * 1000;
   return $self;
@@ -55,6 +56,7 @@ sub new_from_epoch {
 sub new_from_ratadie {
   my ($class, $rd, %opts) = @_;
   my $self = $class->initialize(%opts);
+  $rd = double($rd) if ref $rd eq 'ARRAY';
   # EPOCH = (RD - 719_163) * 86_400
   # only milisecond precision => strip microseconds
   $self->{PDL} = longlong(floor((double($rd) - 719_163) * 86_400_000 + 0.5)) * 1000;
@@ -64,6 +66,7 @@ sub new_from_ratadie {
 sub new_from_serialdate {
   my ($class, $sd, %opts) = @_;
   my $self = $class->initialize(%opts);
+  $sd = double($sd) if ref $sd eq 'ARRAY';
   # EPOCH = (SD - 719_163 - 366) * 86_400
   # only milisecond precision => strip microseconds
   $self->{PDL} = longlong(floor((double($sd) - 719_529) * 86_400_000 + 0.5)) * 1000;
@@ -73,6 +76,7 @@ sub new_from_serialdate {
 sub new_from_juliandate {
   my ($class, $jd, %opts) = @_;
   my $self = $class->initialize(%opts);
+  $jd = double($jd) if ref $jd eq 'ARRAY';
   # EPOCH = (JD - 2_440_587.5) * 86_400
   # only milisecond precision => strip microseconds
   $self->{PDL} = longlong(floor((double($jd) - 2_440_587.5) * 86_400_000 + 0.5)) * 1000;
@@ -90,13 +94,20 @@ sub new_from_parts {
   my ($class, $y, $m, $d, $H, $M, $S, $U, %opts) = @_;
   die "new_from_parts: args - y, m, d - are mandatory" unless defined $y && defined $m && defined $d;
   my $self = $class->initialize(%opts);
-  my $rdate = _ymd2ratadie($y, $m, $d);
+  $y = long($y) if ref $y eq 'ARRAY';
+  $d = long($d) if ref $d eq 'ARRAY';
+  $m = long($m) if ref $m eq 'ARRAY';
+  $H = long($H) if ref $H eq 'ARRAY';
+  $M = long($M) if ref $M eq 'ARRAY';
+  $S = long($S) if ref $S eq 'ARRAY';
+  $U = long($U) if ref $U eq 'ARRAY';
+  my $rdate = _ymd2ratadie($y->copy, $m->copy, $d->copy);
   my $epoch = (floor($rdate) - 719163) * 86400;
   $epoch += floor($H) * 3600 if defined $H;
   $epoch += floor($M) * 60   if defined $M;
   $epoch += floor($S)        if defined $S;
-  $epoch = $epoch * 1_000_000;
-  $epoch += floor($U)        if defined $U;
+  $epoch = longlong($epoch) * 1_000_000;
+  $epoch += longlong(floor($U)) if defined $U;
   $self->{PDL} = longlong($epoch);
   return $self;
 }
@@ -378,7 +389,7 @@ sub _datetime_to_jumboepoch {
   if (ref $dt eq 'ARRAY') {
     my @new;
     for (@$dt) {
-      my $s = _datetime_to_jumboepoch($_);
+      my $s = _datetime_to_jumboepoch($_, $inplace);
       if ($inplace) {
         $_ = ref $_ ? undef : $s;
       }
@@ -386,7 +397,7 @@ sub _datetime_to_jumboepoch {
         push @new, $s;
       }
     }
-    return \@new if $inplace;
+    return \@new if !$inplace;
   }
   else {
     if (looks_like_number $dt) {
@@ -415,7 +426,7 @@ sub _jumboepoch_to_datetime {
   if (ref $v eq 'ARRAY') {
     my @new;
     for (@$v) {
-      my $s = _jumboepoch_to_datetime($_, $fmt);
+      my $s = _jumboepoch_to_datetime($_, $fmt, $inplace);
       if ($inplace) {
         $_ = ref $_ ? undef : $s;
       }
@@ -423,7 +434,7 @@ sub _jumboepoch_to_datetime {
         push @new, $s;
       }
     }
-    return \@new if $inplace;
+    return \@new if !$inplace;
   }
   elsif (!ref $v) {
     my $ns = ($v % 1_000_000) * 1_000;
@@ -469,7 +480,7 @@ sub _ymd2ratadie {
     $d->inplace->minus($dec_by_one + $dec_leap_feb + $dec_nonleap_feb);
   }
 
-  my $rdate = $d; # may contain day fractions
+  my $rdate = double($d); # may contain day fractions
   $rdate->setbadif(($y < 1) + ($y > 9999));
   $rdate->setbadif(($m < 1) + ($m > 12));
   $rdate->setbadif(($d < 1) + ($d >= 32));  # not 100% correct (max. can be 31.9999999)
