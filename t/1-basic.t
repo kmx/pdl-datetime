@@ -298,11 +298,19 @@ my $dt2 = PDL::DateTime->new_from_parts(\@year, \@month, \@day_of_month, \@hour,
 my $dt3 = PDL::DateTime->new_from_parts($pdl_year, $pdl_month, $pdl_day_of_month, $pdl_hour, $pdl_minute, $pdl_second, $pdl_microsecond);
 my $dt4 = PDL::DateTime->new_from_ymd($pdl_year*10000 + $pdl_month*100 + $pdl_day_of_month);
 
-warn "\n\n";
-warn long($dt1 == $dt2);
-warn long($dt1 == $dt3);
-warn long($dt1->dt_truncate('day') == $dt4);
-warn "\n\n";
-ok(1);
+ok(all($dt1 == $dt2),                                      'compare dt/array');
+ok(all($dt1 == $dt3),                                      'compare dt/pdl');
+ok(all($dt1->dt_truncate('day') == $dt4),                  'compare dt/ymd');
+my ($y, $m, $d) = $dt1->dt_ymd;
+ok(all($y == $pdl_year),                                   'part year');
+ok(all($m == $pdl_month),                                  'part month');
+ok(all($d == $pdl_day_of_month),                           'part day_of_month');
+ok(all($dt1->dt_day_of_week == $pdl_day_of_week),          'part day_of_week');
+ok(all($dt1->dt_day_of_year == $pdl_day_of_year),          'part day_of_year');
+ok(all($dt1->dt_hour == $pdl_hour),                        'part hour');
+ok(all($dt1->dt_minute == $pdl_minute),                    'part minute');
+ok(all($dt1->dt_second == $pdl_second),                    'part second');
+ok(all($dt1->dt_microsecond == $pdl_microsecond),          'part microsecond');
+ok(all(longlong(floor($dt1->double_epoch)) == $pdl_epoch), 'epoch');
 
 done_testing();

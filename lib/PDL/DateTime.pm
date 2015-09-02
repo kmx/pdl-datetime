@@ -12,7 +12,7 @@ use PDL::Types;
 use PDL::Primitive;
 use PDL::Basic qw(sequence);
 use PDL::Math  qw(floor);
-use PDL::Core  qw(longlong long double);
+use PDL::Core  qw(longlong long double byte short);
 use Time::Moment;
 
 use overload '""' => \&_stringify;
@@ -204,7 +204,9 @@ sub dt_day_of_week {
 
 sub dt_day_of_year {
   my $self = shift;
-  return PDL->new(long, _jumbo2ratadie($self) - _jumbo2ratadie($self->dt_truncate('year')) + 1);
+  my $rd1 = long(floor($self->double_ratadie));
+  my $rd2 = long(floor($self->dt_truncate('year')->double_ratadie));
+  return PDL->new(long, ($rd1 - $rd2 + 1));
 }
 
 sub dt_add {
@@ -340,7 +342,7 @@ sub _plus_delta_m {
   my $rdate = $self->double_ratadie;
   my ($y, $m, $d) = _ratadie2ymd($rdate);
   $rdate = _ymd2ratadie($y, $m, $d, $delta_m);
-  return longlong(floor($rdate) - 719163) * 86_400_000_000 + $microsec;
+  return PDL::DateTime->new(longlong(floor($rdate) - 719163) * 86_400_000_000 + $microsec);
 }
 
 sub _allign_m_y {
@@ -348,10 +350,10 @@ sub _allign_m_y {
   my $microsec = $self % 1_000_000_000;
   my $rdate = $self->double_ratadie;
   my ($y, $m, $d) = _ratadie2ymd($rdate);
-  $m .= 1 if $mflag;
-  $y .= 1 if $yflag;
+  $d .= 1 if $mflag || $yflag;
+  $m .= 1 if $yflag;
   $rdate = _ymd2ratadie($y, $m, $d);
-  return longlong(floor($rdate) - 719163) * 86_400_000_000 + $microsec;
+  return PDL::DateTime->new(longlong(floor($rdate) - 719163) * 86_400_000_000);
 }
 
 ### private functions
