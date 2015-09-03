@@ -128,10 +128,16 @@ sub new_sequence {
   my $dt = _fix_datetime_value($start);
   my $tm_start = $dt eq 'now' ? Time::Moment->now_utc : Time::Moment->from_string($dt, lenient=>1);
   my $microseconds = $tm_start->microsecond;
-  if ($unit eq 'year' || $unit eq 'month') {
+  if ($unit eq 'year') {
     # slow :(
     my @epoch = ($tm_start->epoch);
     push @epoch, $tm_start->plus_years($_*$step)->epoch for (1..$count-1);
+    $self->{PDL} = longlong(\@epoch) * 1_000_000 + $microseconds;
+  }
+  if ($unit eq 'month') {
+    # slow :(
+    my @epoch = ($tm_start->epoch);
+    push @epoch, $tm_start->plus_months($_*$step)->epoch for (1..$count-1);
     $self->{PDL} = longlong(\@epoch) * 1_000_000 + $microseconds;
   }
   elsif (my $inc = $INC_SECONDS{$unit}) {
@@ -347,7 +353,6 @@ sub _plus_delta_m {
 
 sub _allign_m_y {
   my ($self, $mflag, $yflag) = @_;
-  my $microsec = $self % 1_000_000_000;
   my $rdate = $self->double_ratadie;
   my ($y, $m, $d) = _ratadie2ymd($rdate);
   $d .= 1 if $mflag || $yflag;
@@ -439,9 +444,9 @@ sub _jumboepoch_to_datetime {
     return \@new if !$inplace;
   }
   elsif (!ref $v) {
-    my $ns = ($v % 1_000_000) * 1_000;
-    my $ts = POSIX::floor($v / 1_000_000);
-    my $tm = eval { Time::Moment->from_epoch($ts, $ns) };
+    my $us = int($v % 1_000_000);
+    my $ts = int(($v - $us) / 1_000_000);
+    my $tm = eval { Time::Moment->from_epoch($ts, $us * 1000) };
     return 'BAD' unless defined $tm;
     if ($fmt eq 'Time::Moment') {
       return $tm;
@@ -470,7 +475,7 @@ sub _ymd2ratadie {
   if (defined $delta_m) {
     # handle months + years
     $m->inplace->plus($delta_m);
-    my $extra_y += $m / 12;
+    my $extra_y = $m / 12;
     $m->inplace->mod(12);
     $y->inplace->plus($extra_y);
     # fix days
