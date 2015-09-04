@@ -314,9 +314,7 @@ sub dt_at {
 sub dt_set {
   my $self = shift;
   my $datetime = pop;
-  my $v = _datetime_to_jumboepoch($datetime);
-  warn "XXX-FIXME: XXXXXXXXXXXXX [$datetime] v=$v";
-  PDL::Core::set_c($self, [@_], $v);
+  PDL::Core::set_c($self, [@_], _datetime_to_jumboepoch($datetime));
 }
 
 sub dt_unpdl {
