@@ -271,10 +271,14 @@ sub dt_truncate {
     $self->set_inplace(0);
     return $self unless defined $unit;
     if ($unit eq 'year') {
-      $self->{PDL} = $self->_allign_m_y(0, 1);
+      $self->{PDL} = $self->_allign_m_y(0, 1)->{PDL};
     }
     elsif ($unit eq 'month') {
-      $self->{PDL} = $self->_allign_m_y(1, 0);
+      $self->{PDL} = $self->_allign_m_y(1, 0)->{PDL};
+    }
+    elsif ($unit eq 'millisecond') {
+      my $sub = $self % 1_000;
+      $self->inplace->minus($sub, 0);
     }
     elsif (my $inc = $INC_SECONDS{$unit}) {
       my $sub = $self % ($inc * 1_000_000);
@@ -289,6 +293,9 @@ sub dt_truncate {
     }
     elsif ($unit eq 'year') {
       return $self->_allign_m_y(0, 1);
+    }
+    elsif ($unit eq 'millisecond') {
+      return $self - $self % 1_000;
     }
     elsif (my $inc = $INC_SECONDS{$unit}) {
       return $self - $self % ($inc * 1_000_000);
@@ -308,6 +315,7 @@ sub dt_set {
   my $self = shift;
   my $datetime = pop;
   my $v = _datetime_to_jumboepoch($datetime);
+  warn "XXX-FIXME: XXXXXXXXXXXXX [$datetime] v=$v";
   PDL::Core::set_c($self, [@_], $v);
 }
 
@@ -318,9 +326,11 @@ sub dt_unpdl {
     return (double($self) / 1_000_000)->unpdl;
   }
   elsif ($fmt eq 'epoch_int') {
-    #XXX-TODO longlong(($self - ($self % 1000000)) / 1000000)->unpdl;
-    return (longlong(floor(double($self) / 1_000_000)))->unpdl;
+    return longlong(($self - ($self % 1000000)) / 1000000)->unpdl;
   }
+  #elsif ($fmt eq 'Time::Moment') {
+  #  XXX-TODO (maybe)
+  #}
   else {
     my $array = $self->unpdl;
     _jumboepoch_to_datetime($array, $fmt, 1); # change $array inplace!

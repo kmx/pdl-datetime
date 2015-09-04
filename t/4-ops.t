@@ -62,10 +62,54 @@ my $start = ['1996-02-29T23:59:59.999999Z', '1899-12-31T23:59:59.999999Z'];
   $dt->inplace->dt_add(microsecond=>2); is_deeply($dt->dt_unpdl, [ '1996-03-01T00:00:00.000001', '1900-01-01T00:00:00.000001'], "inplace->add(microsecond=>2)");
 }
 
+{
+  my $dt = PDL::DateTime->new_from_datetime($start);
+  is_deeply($dt->dt_truncate('year')->dt_unpdl        , [ '1996-01-01',              '1899-01-01'],              "truncate('year')");
+  is_deeply($dt->dt_truncate('month')->dt_unpdl       , [ '1996-02-01',              '1899-12-01'],              "truncate('month')");
+  is_deeply($dt->dt_truncate('week')->dt_unpdl        , [ '1996-02-29',              '1899-12-28'],              "truncate('week')");
+  is_deeply($dt->dt_truncate('day')->dt_unpdl         , [ '1996-02-29',              '1899-12-31'],              "truncate('day')");
+  is_deeply($dt->dt_truncate('hour')->dt_unpdl        , [ '1996-02-29T23:00',        '1899-12-31T23:00'],        "truncate('hour')");
+  is_deeply($dt->dt_truncate('minute')->dt_unpdl      , [ '1996-02-29T23:59',        '1899-12-31T23:59'],        "truncate('minute')");
+  is_deeply($dt->dt_truncate('second')->dt_unpdl      , [ '1996-02-29T23:59:59',     '1899-12-31T23:59:59'],     "truncate('second')");
+  is_deeply($dt->dt_truncate('millisecond')->dt_unpdl , [ '1996-02-29T23:59:59.999', '1899-12-31T23:59:59.999'], "truncate('millisecond')");
+}
+
+{
+  my $dt = PDL::DateTime->new_from_datetime($start);
+  $dt->inplace->dt_truncate('year')        ; is_deeply($dt->dt_unpdl, [ '1996-01-01',                 '1899-01-01'],                 "inplace->truncate('year')");
+  $dt = PDL::DateTime->new_from_datetime($start);
+  $dt->inplace->dt_truncate('month')       ; is_deeply($dt->dt_unpdl, [ '1996-02-01',                 '1899-12-01'],                 "inplace->truncate('month')");
+  $dt = PDL::DateTime->new_from_datetime($start);
+  $dt->inplace->dt_truncate('week')        ; is_deeply($dt->dt_unpdl, [ '1996-02-29',                 '1899-12-28'],                 "inplace->truncate('week')");
+  $dt = PDL::DateTime->new_from_datetime($start);
+  $dt->inplace->dt_truncate('day')         ; is_deeply($dt->dt_unpdl, [ '1996-02-29',                 '1899-12-31'],                 "inplace->truncate('day')");
+  $dt = PDL::DateTime->new_from_datetime($start);
+  $dt->inplace->dt_truncate('hour')        ; is_deeply($dt->dt_unpdl, [ '1996-02-29T23:00',           '1899-12-31T23:00'],           "inplace->truncate('hour')");
+  $dt = PDL::DateTime->new_from_datetime($start);
+  $dt->inplace->dt_truncate('minute')      ; is_deeply($dt->dt_unpdl, [ '1996-02-29T23:59',           '1899-12-31T23:59'],           "inplace->truncate('minute')");
+  $dt = PDL::DateTime->new_from_datetime($start);
+  $dt->inplace->dt_truncate('second')      ; is_deeply($dt->dt_unpdl, [ '1996-02-29T23:59:59',        '1899-12-31T23:59:59'],        "inplace->truncate('second')");
+  $dt = PDL::DateTime->new_from_datetime($start);
+  $dt->inplace->dt_truncate('millisecond') ; is_deeply($dt->dt_unpdl, [ '1996-02-29T23:59:59.999',    '1899-12-31T23:59:59.999'],    "inplace->truncate('millisecond')");
+}
+
+{
+  my $dt = PDL::DateTime->new_from_datetime($start);
+  is_deeply($dt->dt_unpdl , [ '1996-02-29T23:59:59.999999', '1899-12-31T23:59:59.999999'], "dt_at/dt_set");
+  is($dt->dt_at(0), '1996-02-29T23:59:59.999999', "dt_at/1");
+  $dt->dt_set(0,    '1970-01-01T19:19:19.191919');
+  is($dt->dt_at(0), '1970-01-01T19:19:19.191919', "dt_at/2");
+  $dt->dt_set(0,    '0001-01-01T19:19:19.191919');
+  is($dt->dt_at(0), '0001-01-01T19:19:19.191919', "dt_at/3");
+  $dt->dt_set(0,    '4567-05-19T19:19:19.191919');
+  is($dt->dt_at(0), '4567-05-19T19:19:19.191919', "dt_at/4");
+  $dt->dt_set(0,    '9999-05-19T19:19:19.191919');
+  is($dt->dt_at(0), '9999-05-19T19:19:19.191919', "dt_at/5");
+}
+
 #XXX-TODO
 # dt_add: combined e.g. $dt->dt_add(year=>1, month=>2) / $dt->dt_add(month=>2, year=>1)
 # dt_add: with negative value
-# $dt->inplace->dt_truncate
 # $dt->dt_set
 # $dt->dt_at
 # stringification

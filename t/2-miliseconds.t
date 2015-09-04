@@ -221,8 +221,9 @@ ok(all($dt1 == $dtD),          'compare dt/sd3');
 ok(all($dt1 == $dtE),          'compare dt/jd3');
 ok(all($dt1 == $pdl_epoch_us), 'compare epoch_us');
 
-is_deeply($dt1->dt_unpdl("%Y-%m-%dT%H:%M:%S.%3N"), \@datetime, "dt_unpdl");
-is_deeply($dt1->unpdl, \@epoch_us, "unpdl");
+is_deeply($dt1->dt_unpdl("%Y-%m-%dT%H:%M:%S.%3N"), \@datetime, "dt_unpdl('..')");
+is_deeply($dt1->unpdl, \@epoch_us, "dt_unpdl");
+delta_ok($dt1->dt_unpdl('epoch'), \@ep, "dt_unpdl('epoch')");
 
 delta_ok($dt1->double_epoch->unpdl,      \@ep, '1-double_epoch');
 delta_ok($dt1->double_ratadie->unpdl,    \@rd, '1-double_ratadie');
@@ -232,6 +233,7 @@ delta_ok($dt2->double_epoch->unpdl,      \@ep, '2-double_epoch');
 delta_ok($dt2->double_ratadie->unpdl,    \@rd, '2-double_ratadie');
 delta_ok($dt2->double_serialdate->unpdl, \@sd, '2-double_serialdate');
 delta_ok($dt2->double_juliandate->unpdl, \@jd, '2-double_juliandate');
+
 
 done_testing();
 
