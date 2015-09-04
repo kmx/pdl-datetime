@@ -216,16 +216,22 @@ sub dt_day_of_year {
 }
 
 sub dt_add {
-  my ($self, %args) = @_;
+  my $self = shift;
   if ($self->is_inplace) {
     $self->set_inplace(0);
-    for my $unit (keys %args) {
-      my $num = $args{$unit};
+    while (@_) {
+      my ($unit, $num) = (shift, shift);
       if ($unit eq 'month') {
-        $self->{PDL} = $self->_plus_delta_m($num);
+        $self->inplace->plus($self->_plus_delta_m($num), 0);
       }
       elsif ($unit eq 'year') {
-        $self->{PDL} = $self->_plus_delta_m($num * 12);
+        $self->inplace->plus($self->_plus_delta_m($num * 12), 0);
+      }
+      elsif ($unit eq 'millisecond') {
+        $self->inplace->plus($num * 1000, 0);
+      }
+      elsif ($unit eq 'microsecond') {
+        $self->inplace->plus($num, 0);
       }
       elsif (my $inc = $INC_SECONDS{$unit}) {
         my $add = longlong(floor($num * $inc * 1_000_000 + 0.5));
@@ -235,14 +241,21 @@ sub dt_add {
     return $self;
   }
   else {
-    my $rv = $self;
-    for my $unit (keys %args) {
-      my $num = $args{$unit};
+    #my $rv = $self->copy; #XXX-FIXME $self->copy does not work
+    my $rv = PDL::DateTime->new($self);
+    while (@_) {
+      my ($unit, $num) = (shift, shift);
       if ($unit eq 'month') {
         $rv += $rv->_plus_delta_m($num);
       }
       elsif ($unit eq 'year') {
         $rv += $rv->_plus_delta_m($num * 12);
+      }
+      elsif ($unit eq 'millisecond') {
+        $rv += $num * 1000;
+      }
+      elsif ($unit eq 'microsecond') {
+        $rv += $num;
       }
       elsif(my $inc = $INC_SECONDS{$unit}) {
         $rv += longlong(floor($num * $inc * 1_000_000 + 0.5));
@@ -344,11 +357,12 @@ sub _autodetect_strftime_format {
 
 sub _plus_delta_m {
   my ($self, $delta_m) = @_;
-  my $microsec = $self % 1_000_000_000;
-  my $rdate = $self->double_ratadie;
-  my ($y, $m, $d) = _ratadie2ymd($rdate);
-  $rdate = _ymd2ratadie($y, $m, $d, $delta_m);
-  return PDL::DateTime->new(longlong(floor($rdate) - 719163) * 86_400_000_000 + $microsec);
+  my $day_fraction = $self % 86_400_000_000;
+  my $rdate_bf = ($self - $day_fraction)->double_ratadie;
+  my ($y, $m, $d) = _ratadie2ymd($rdate_bf);
+  my $rdate_af = _ymd2ratadie($y, $m, $d, $delta_m);
+  my $rv = longlong($rdate_af - $rdate_bf) * 86_400_000_000;
+  return $rv;
 }
 
 sub _allign_m_y {
@@ -474,17 +488,18 @@ sub _ymd2ratadie {
 
   if (defined $delta_m) {
     # handle months + years
-    $m->inplace->plus($delta_m);
-    my $extra_y = $m / 12;
-    $m->inplace->mod(12);
-    $y->inplace->plus($extra_y);
+    $m->inplace->plus($delta_m - 1, 0);
+    my $extra_y = floor($m / 12);
+    $m->inplace->modulo(12, 0);
+    $m->inplace->plus(1, 0);
+    $y->inplace->plus($extra_y, 0);
     # fix days
     my $dec_by_one = ($d==31) * (($m==4) + ($m==6) + ($m==9) + ($m==11));
     # 1800, 1900, 2100, 2200, 2300 - common; 2000, 2400 - leap
     my $is_nonleap_yr = (($y % 4)!=0) + (($y % 100)==0) - (($y % 400)==0);
     my $dec_nonleap_feb = ($m==2) * ($d>28) * $is_nonleap_yr * ($d-28);
     my $dec_leap_feb    = ($m==2) * ($d>29) * (1 - $is_nonleap_yr) * ($d-29);
-    $d->inplace->minus($dec_by_one + $dec_leap_feb + $dec_nonleap_feb);
+    $d->inplace->minus($dec_by_one + $dec_leap_feb + $dec_nonleap_feb, 0);
   }
 
   my $rdate = double($d); # may contain day fractions
