@@ -222,16 +222,16 @@ sub dt_add {
     while (@_) {
       my ($unit, $num) = (shift, shift);
       if ($unit eq 'month') {
-        $self->inplace->plus($self->_plus_delta_m($num), 0);
+        $self += $self->_plus_delta_m($num);
       }
       elsif ($unit eq 'year') {
-        $self->inplace->plus($self->_plus_delta_m($num * 12), 0);
+        $self += $self->_plus_delta_m($num * 12);
       }
       elsif ($unit eq 'millisecond') {
-        $self->inplace->plus($num * 1000, 0);
+        $self += $num * 1000;
       }
       elsif ($unit eq 'microsecond') {
-        $self->inplace->plus($num, 0);
+        $self += $num;
       }
       elsif (my $inc = $INC_SECONDS{$unit}) {
         my $add = longlong(floor($num * $inc * 1_000_000 + 0.5));
