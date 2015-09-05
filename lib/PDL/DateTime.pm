@@ -38,6 +38,9 @@ sub new {
   if (ref $data eq 'PDL' && ($data->type == longlong || $data->type == long)) {
     $self->{PDL} = longlong($data);
   }
+  elsif (ref $data eq 'PDL::DateTime') {
+    $self->{PDL} = longlong($data->{PDL}->copy); #XXX-FIXME copy nedds a fix
+  }
   else {
     $self->{PDL} = longlong(floor(double($data) + 0.5));
   }
@@ -241,7 +244,7 @@ sub dt_add {
     return $self;
   }
   else {
-    #my $rv = $self->copy; #XXX-FIXME $self->copy does not work
+    #XXX-FIXME $self->copy does keep class PDL::DateTime
     my $rv = PDL::DateTime->new($self);
     while (@_) {
       my ($unit, $num) = (shift, shift);
