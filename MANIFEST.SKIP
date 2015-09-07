@@ -22,6 +22,7 @@
 \.tmp$
 \.bak$
 ^tmp
+\bnone/
 
 # Avoid our own built files.
 \APDL-

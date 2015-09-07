@@ -215,7 +215,7 @@ sub dt_day_of_year {
   my $self = shift;
   my $rd1 = long(floor($self->double_ratadie));
   my $rd2 = long(floor($self->dt_truncate('year')->double_ratadie));
-  return PDL->new(long, ($rd1 - $rd2 + 1));
+  return PDL->new(short, ($rd1 - $rd2 + 1));
 }
 
 sub dt_add {
@@ -329,9 +329,6 @@ sub dt_unpdl {
   elsif ($fmt eq 'epoch_int') {
     return longlong(($self - ($self % 1000000)) / 1000000)->unpdl;
   }
-  #elsif ($fmt eq 'Time::Moment') {
-  #  XXX-TODO (maybe)
-  #}
   else {
     my $array = $self->unpdl;
     _jumboepoch_to_datetime($array, $fmt, 1); # change $array inplace!
@@ -460,7 +457,7 @@ sub _jumboepoch_to_datetime {
     for (@$v) {
       my $s = _jumboepoch_to_datetime($_, $fmt, $inplace);
       if ($inplace) {
-        $_ = ref $_ ? undef : $s;
+        $_ = $s;
       }
       else {
         push @new, $s;

@@ -206,6 +206,16 @@ my $dtC = PDL::DateTime->new_from_ratadie   ($dt2->double_ratadie);
 my $dtD = PDL::DateTime->new_from_serialdate($dt2->double_serialdate);
 my $dtE = PDL::DateTime->new_from_juliandate($dt2->double_juliandate);
 
+is(ref $dt1->double_epoch, 'PDL');
+is(ref $dt1->double_ratadie, 'PDL');
+is(ref $dt1->double_serialdate, 'PDL');
+is(ref $dt1->double_juliandate, 'PDL');
+
+is($dt1->double_epoch->type, 'double');
+is($dt1->double_ratadie->type, 'double');
+is($dt1->double_serialdate->type, 'double');
+is($dt1->double_juliandate->type, 'double');
+
 ok(all($dt1 == $dt0),          'compare dt/pdl');
 ok(all($dt1 == $dt3),          'compare dt/ep1');
 ok(all($dt1 == $dt4),          'compare dt/rd1');
