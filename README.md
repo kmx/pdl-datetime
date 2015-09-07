@@ -93,25 +93,25 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 ## double\_epoch
 
     my $dbl = $p->double_epoch;
-    # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+    # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
     # returns Double piddle
 
 ## double\_ratadie
 
     my $dbl = $p->double_ratadie;
-    # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+    # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
     # returns Double piddle
 
 ## double\_serialdate
 
     my $dbl = $p->double_serialdate;
-    # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+    # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
     # returns Double piddle
 
 ## double\_juliandate
 
     my $dbl = $p->double_juliandate;
-    # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+    # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
     # returns Double piddle
 
 ## dt\_ymd
@@ -153,7 +153,8 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 
     my $p->dt_add($num, $unit);
     # adds $num datetime units
-    # $unit .. "year", "month", "week", "day", "hour", "minute", "second", "millisecond", "microsecond"
+    # $unit .. "year", "month", "week", "day", "hour", "minute",
+    #          "second", "millisecond", "microsecond"
 
     my $p->dt_add(day => 2);
     # turns e.g. 2015-08-20T23:24:25.123456Z
@@ -169,7 +170,8 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 ## dt\_truncate
 
     my $p->dt_truncate($unit);
-    # $unit .. "year", "month", "week", "day", "hour", "minute", "second", "millisecond", "microsecond"
+    # $unit .. "year", "month", "week", "day", "hour", "minute",
+    #          "second", "millisecond", "microsecond"
 
     my $p->dt_truncate('minute');
     # turns e.g. 2015-08-20T23:24:25.123456Z
@@ -193,16 +195,16 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     
     my $array = $p->dt_unpdl('epoch');
     # returns perl arrayref (not a piddle) with epoch seconds as double
-    # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+    # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
     
     my $array = $p->dt_unpdl('epoch_int');
     # returns perl arrayref (not a piddle) with epoch seconds as integer values
-    # BEWARE: precision loss, before exporting the time precision is truncated to seconds!
+    # BEWARE: precision loss, before exporting the time is truncated to seconds!
 
     my $array = $p->dt_unpdl('Time::Moment');
     # returns perl arrayref with Time::Moment objects
 
-See [Time::Moment](https://metacpan.org/pod/Time::Moment#strftime) (which we use for stringification) for supported format.
+See [Time::Moment](https://metacpan.org/pod/Time::Moment#strftime) (which we use for stringification) for supported formats.
 
 ## dt\_at
 
