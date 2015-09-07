@@ -107,25 +107,25 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
 =head2 double_epoch
 
  my $dbl = $p->double_epoch;
- # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+ # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
  # returns Double piddle
 
 =head2 double_ratadie
 
  my $dbl = $p->double_ratadie;
- # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+ # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
  # returns Double piddle
 
 =head2 double_serialdate
 
  my $dbl = $p->double_serialdate;
- # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+ # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
  # returns Double piddle
 
 =head2 double_juliandate
 
  my $dbl = $p->double_juliandate;
- # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+ # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
  # returns Double piddle
 
 =head2 dt_ymd
@@ -167,7 +167,8 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
 
  my $p->dt_add($num, $unit);
  # adds $num datetime units
- # $unit .. "year", "month", "week", "day", "hour", "minute", "second", "millisecond", "microsecond"
+ # $unit .. "year", "month", "week", "day", "hour", "minute",
+ #          "second", "millisecond", "microsecond"
 
  my $p->dt_add(day => 2);
  # turns e.g. 2015-08-20T23:24:25.123456Z
@@ -183,7 +184,8 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
 =head2 dt_truncate
 
  my $p->dt_truncate($unit);
- # $unit .. "year", "month", "week", "day", "hour", "minute", "second", "millisecond", "microsecond"
+ # $unit .. "year", "month", "week", "day", "hour", "minute",
+ #          "second", "millisecond", "microsecond"
 
  my $p->dt_truncate('minute');
  # turns e.g. 2015-08-20T23:24:25.123456Z
@@ -207,16 +209,16 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
  
  my $array = $p->dt_unpdl('epoch');
  # returns perl arrayref (not a piddle) with epoch seconds as double
- # BEWARE: precision loss, before exporting the time precision is truncated to miliseconds!
+ # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
  
  my $array = $p->dt_unpdl('epoch_int');
  # returns perl arrayref (not a piddle) with epoch seconds as integer values
- # BEWARE: precision loss, before exporting the time precision is truncated to seconds!
+ # BEWARE: precision loss, before exporting the time is truncated to seconds!
 
  my $array = $p->dt_unpdl('Time::Moment');
  # returns perl arrayref with Time::Moment objects
 
-See L<Time::Moment|Time::Moment/strftime> (which we use for stringification) for supported format.
+See L<Time::Moment|Time::Moment/strftime> (which we use for stringification) for supported formats.
 
 =head2 dt_at
 
