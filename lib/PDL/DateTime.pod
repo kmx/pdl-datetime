@@ -166,7 +166,8 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
 =head2 dt_add
 
  my $p->dt_add($num, $unit);
- # adds $num datetime units
+ # adds $num datetime units 
+ # $num can be positive (addition) or negative (subtraction)
  # $unit .. "year", "month", "week", "day", "hour", "minute",
  #          "second", "millisecond", "microsecond"
 
@@ -174,12 +175,17 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
  # turns e.g. 2015-08-20T23:24:25.123456Z
  # into       2015-08-22T23:24:25.123456Z
 
+ my $p->dt_add(day => -2);
+ # turns e.g. 2015-08-20T23:24:25.123456Z
+ # into       2015-08-18T23:24:25.123456Z
+
  my $p->dt_add(day => 2, year => 3, month => 1);
  # turns e.g. 2015-08-20T23:24:25.123456Z
  # into       2018-09-22T23:24:25.123456Z
 
  #NOTE: supports also C<inplace>
  $p->inplace->dt_add(day => 2);
+
 
 =head2 dt_truncate
 

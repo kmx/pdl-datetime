@@ -152,13 +152,18 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 ## dt\_add
 
     my $p->dt_add($num, $unit);
-    # adds $num datetime units
+    # adds $num datetime units 
+    # $num can be positive (addition) or negative (subtraction)
     # $unit .. "year", "month", "week", "day", "hour", "minute",
     #          "second", "millisecond", "microsecond"
 
     my $p->dt_add(day => 2);
     # turns e.g. 2015-08-20T23:24:25.123456Z
     # into       2015-08-22T23:24:25.123456Z
+
+    my $p->dt_add(day => -2);
+    # turns e.g. 2015-08-20T23:24:25.123456Z
+    # into       2015-08-18T23:24:25.123456Z
 
     my $p->dt_add(day => 2, year => 3, month => 1);
     # turns e.g. 2015-08-20T23:24:25.123456Z
