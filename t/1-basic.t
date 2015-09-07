@@ -347,6 +347,7 @@ ok(all($dt1->dt_truncate('second') == $pdl_truncS),   'dt_truncate second');
 is_deeply( $dt1->dt_unpdl("%Y-%m-%dT%H:%M:%S.%6N"), \@datetime, "dt_unpdl");
 is_deeply( $dt1->unpdl, \@epoch_us, "unpdl");
 is_deeply( $dt1->dt_unpdl('epoch_int'), \@epoch, "dt_unpdl('epoch_int')");
+ok(all($dt1->longlong_epoch == $pdl_epoch), "longlong_epoch");
 
 done_testing();
 

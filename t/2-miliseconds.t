@@ -207,6 +207,7 @@ my $dtD = PDL::DateTime->new_from_serialdate($dt2->double_serialdate);
 my $dtE = PDL::DateTime->new_from_juliandate($dt2->double_juliandate);
 
 is(ref $dt1->double_epoch, 'PDL');
+is(ref $dt1->longlong_epoch, 'PDL');
 is(ref $dt1->double_ratadie, 'PDL');
 is(ref $dt1->double_serialdate, 'PDL');
 is(ref $dt1->double_juliandate, 'PDL');

@@ -96,6 +96,24 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
     # returns Double piddle
 
+## longlong\_epoch
+
+    my $epoch = $p->longlong_epoch;
+    # BEWARE: precision loss, before exporting the time is truncated to seconds!
+    # returns LongLong piddle
+
+    # NOTE: $p->longlong_epoch is equivalent to: longlong(floor($p->double_epoch))
+    # 1969-12-31T23:59:58        double_epoch = -2.0      longlong_epoch = -2
+    # 1969-12-31T23:59:58.001    double_epoch = -1.999    longlong_epoch = -2
+    # 1969-12-31T23:59:58.999    double_epoch = -1.001    longlong_epoch = -2
+    # 1969-12-31T23:59:59        double_epoch = -1.0      longlong_epoch = -1
+    # 1969-12-31T23:59:59.001    double_epoch = -0.999    longlong_epoch = -1
+    # 1969-12-31T23:59:59.999    double_epoch = -0.001    longlong_epoch = -1
+    # 1970-01-01T00:00:00        double_epoch =  0.0      longlong_epoch =  0
+    # 1970-01-01T00:00:00.001    double_epoch =  0.001    longlong_epoch =  0
+    # 1970-01-01T00:00:00.999    double_epoch =  0.999    longlong_epoch =  0
+    # 1970-01-01T00:00:01        double_epoch =  1.0      longlong_epoch =  1
+
 ## double\_ratadie
 
     my $dbl = $p->double_ratadie;
@@ -152,7 +170,7 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 ## dt\_add
 
     my $p->dt_add($num, $unit);
-    # adds $num datetime units 
+    # adds $num datetime units
     # $num can be positive (addition) or negative (subtraction)
     # $unit .. "year", "month", "week", "day", "hour", "minute",
     #          "second", "millisecond", "microsecond"
@@ -189,7 +207,7 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 
     my $array = $p->dt_unpdl;
     my $array = $p->dt_unpdl($format);
-    
+
     my $array = $p->dt_unpdl('%y-%m-%d %H:%M:%S');
     # returns perl arrayref with ISO 8601 date time strings
 
@@ -197,11 +215,11 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     # uses ISO 8601 format autodetected to be as short as possible
     # e.g. 2015-09-07T22:53 when all piddle values have 0 seconds and 0 microseconds
     # $format 'auto' is default when dt_unpdl is called without param
-    
+
     my $array = $p->dt_unpdl('epoch');
     # returns perl arrayref (not a piddle) with epoch seconds as double
     # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
-    
+
     my $array = $p->dt_unpdl('epoch_int');
     # returns perl arrayref (not a piddle) with epoch seconds as integer values
     # BEWARE: precision loss, before exporting the time is truncated to seconds!

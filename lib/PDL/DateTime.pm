@@ -39,7 +39,7 @@ sub new {
     $self->{PDL} = longlong($data);
   }
   elsif (ref $data eq 'PDL::DateTime') {
-    $self->{PDL} = longlong($data->{PDL}->copy); #XXX-FIXME copy nedds a fix
+    $self->{PDL} = longlong($data->{PDL}->copy); #XXX-FIXME PDL::DateTime->copy needs a fix
   }
   else {
     $self->{PDL} = longlong(floor(double($data) + 0.5));
@@ -153,28 +153,37 @@ sub new_sequence {
 sub double_epoch {
   my $self = shift;
   # EP = JUMBOEPOCH / 1_000_000;
-  my $epoch_milisec = ($self - ($self % 1000)) / 1000; # BEWARE: precision only in miliseconds!
+  my $epoch_milisec = ($self - ($self % 1000)) / 1000; # BEWARE: precision only in milliseconds!
   return double($epoch_milisec) / 1_000;
+}
+
+sub longlong_epoch {
+  my $self = shift;
+  # EP = JUMBOEPOCH / 1_000_000;
+  # BEWARE: precision only in seconds!
+  my $epoch_sec = ($self - ($self % 1_000_000)) / 1_000_000;
+  #return longlong($epoch_sec); # XXX-FIXME this returns still PDL::DateTime;
+  return longlong($epoch_sec->{PDL});
 }
 
 sub double_ratadie {
   my $self = shift;
   # RD = EPOCH / 86_400 + 719_163;
-  my $epoch_milisec = ($self - ($self % 1000)) / 1000; # BEWARE: precision only in miliseconds!
+  my $epoch_milisec = ($self - ($self % 1000)) / 1000; # BEWARE: precision only in milliseconds!
   return double($epoch_milisec) / 86_400_000 + 719_163;
 }
 
 sub double_serialdate {
   my $self = shift;
   # SD = EPOCH / 86_400 + 719_163 + 366;
-  my $epoch_milisec = ($self - ($self % 1000)) / 1000; # BEWARE: precision only in miliseconds!
+  my $epoch_milisec = ($self - ($self % 1000)) / 1000; # BEWARE: precision only in milliseconds!
   return double($epoch_milisec) / 86_400_000 + 719_529;
 }
 
 sub double_juliandate {
   my $self = shift;
   # JD = EPOCH / 86_400 + 2_440_587.5;
-  my $epoch_milisec = ($self - ($self % 1000)) / 1000; # BEWARE: precision only in miliseconds!
+  my $epoch_milisec = ($self - ($self % 1000)) / 1000; # BEWARE: precision only in milliseconds!
   return double($epoch_milisec) / 86_400_000 + 2_440_587.5;
 }
 
@@ -244,7 +253,7 @@ sub dt_add {
     return $self;
   }
   else {
-    #XXX-FIXME $self->copy does keep class PDL::DateTime
+    #XXX-FIXME $self->copy does not keep class PDL::DateTime
     my $rv = PDL::DateTime->new($self);
     while (@_) {
       my ($unit, $num) = (shift, shift);
@@ -327,7 +336,7 @@ sub dt_unpdl {
     return (double($self) / 1_000_000)->unpdl;
   }
   elsif ($fmt eq 'epoch_int') {
-    return longlong(($self - ($self % 1000000)) / 1000000)->unpdl;
+    return longlong(($self - ($self % 1_000_000)) / 1_000_000)->unpdl;
   }
   else {
     my $array = $self->unpdl;
