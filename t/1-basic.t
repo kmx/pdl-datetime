@@ -315,6 +315,7 @@ my $pdl_truncH        = longlong(\@truncH      );
 my $pdl_truncM        = longlong(\@truncM      );
 my $pdl_truncS        = longlong(\@truncS      );
 
+my $dt0 = PDL::DateTime->new(\@epoch_us);
 my $dt1 = PDL::DateTime->new_from_datetime(\@datetime);
 my $dt2 = PDL::DateTime->new_from_parts(\@year, \@month, \@day_of_month, \@hour, \@minute, \@second, \@microsecond);
 my $dt3 = PDL::DateTime->new_from_parts($pdl_year, $pdl_month, $pdl_day_of_month, $pdl_hour, $pdl_minute, $pdl_second, $pdl_microsecond);
@@ -322,9 +323,10 @@ my $dt4 = PDL::DateTime->new_from_ymd($pdl_year*10000 + $pdl_month*100 + $pdl_da
 
 my ($y, $m, $d) = $dt1->dt_ymd;
 
-ok(all($dt1 == $dt2),                                 'compare dt/array');
-ok(all($dt1 == $dt3),                                 'compare dt/pdl');
-ok(all($dt1 == $pdl_epoch_us),                        'compare epoch_us');
+ok(all($dt1 == $dt0),                                 'new_from_datetime vs. new');
+ok(all($dt1 == $dt2),                                 'new_from_datetime vs. new_from_parts');
+ok(all($dt1 == $dt3),                                 'new_from_datetime vs. new_from_parts');
+ok(all($dt1 == $pdl_epoch_us),                        'new_from_datetime vs. pdl_epoch_us');
 ok(all($dt1->dt_truncate('day') == $dt4),             'compare dt/ymd');
 ok(all($y == $pdl_year),                              'part year');
 ok(all($m == $pdl_month),                             'part month');

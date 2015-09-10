@@ -33,18 +33,43 @@ sub initialize {
 
 sub new {
   my ($class, $data, %opts) = @_;
+
+  # for 'PDL::DateTime' just make a copy                                #XXX-FIXME is copy() what we want?
+  return $data->copy(%opts) if ref $data eq 'PDL::DateTime';
+
   my $self = $class->initialize(%opts);
   # $data is expected to contain epoch timestamps in microseconds
-  if (ref $data eq 'PDL' && ($data->type == longlong || $data->type == long)) {
+  if (ref $data eq 'ARRAY') {
     $self->{PDL} = longlong($data);
   }
-  elsif (ref $data eq 'PDL::DateTime') {
-    $self->{PDL} = longlong($data->{PDL}->copy); #XXX-FIXME PDL::DateTime->copy needs a fix
+  elsif (ref $data eq 'PDL') {
+    if ($data->type == longlong) {
+      $self->{PDL} = $data->copy;                                       #XXX-FIXME is copy() what we want?
+    }
+    elsif ($data->type == double) {
+      $self->{PDL} = longlong(floor($data + 0.5));
+      $self->{PDL} -= $self->{PDL} % 1000; #truncate to milliseconds
+    }
+    else {
+      $self->{PDL} = longlong($data);
+    }
   }
   else {
-    $self->{PDL} = longlong(floor(double($data) + 0.5));
+    die "new: invalid param ref='".ref($data)."'";
   }
+
   return $self;
+}
+
+# Derived objects need to supply its own copy!
+sub copy {
+  my ($self, %opts) = @_;
+  my $new = $self->initialize(%opts);
+  # copy the PDL
+  $new->{PDL} = $self->{PDL}->SUPER::copy;
+  # copy the other stuff
+  #$new->{someThingElse} = $self->{someThingElse};
+  return $new;
 }
 
 sub new_from_epoch {
@@ -253,8 +278,7 @@ sub dt_add {
     return $self;
   }
   else {
-    #XXX-FIXME $self->copy does not keep class PDL::DateTime
-    my $rv = PDL::DateTime->new($self);
+    my $rv = $self->copy;
     while (@_) {
       my ($unit, $num) = (shift, shift);
       if ($unit eq 'month') {
