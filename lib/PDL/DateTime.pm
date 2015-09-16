@@ -479,8 +479,13 @@ sub _datetime_to_jumboepoch {
       return int POSIX::floor($dt * 1_000_000 + 0.5);
     }
     elsif (!ref $dt) {
-      $dt = _fix_datetime_value($dt);
-      $tm = eval { Time::Moment->from_string($dt, lenient=>1) };
+      if ($dt eq 'now') {
+        $tm = Time::Moment->now_utc;
+      }
+      else {
+        $dt = _fix_datetime_value($dt);
+        $tm = eval { Time::Moment->from_string($dt, lenient=>1) };
+      }
     }
     elsif (ref $dt eq 'DateTime' || ref $dt eq 'Time::Piece') {
       $tm = eval { Time::Moment->from_object($dt) };
