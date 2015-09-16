@@ -187,7 +187,7 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     # turns e.g. 2015-08-20T23:24:25.123456Z
     # into       2018-09-22T23:24:25.123456Z
 
-    #NOTE: supports also C<inplace>
+    #NOTE: supports also inplace
     $p->inplace->dt_add(day => 2);
 
 ## dt\_truncate
@@ -200,7 +200,7 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     # turns e.g. 2015-08-20T23:24:25.123456Z
     # into       2015-08-20T23:24:00.000000Z
 
-    #NOTE: supports also C<inplace>
+    #NOTE: supports also inplace
     $p->inplace->dt_truncate('minute');
 
 ## dt\_unpdl

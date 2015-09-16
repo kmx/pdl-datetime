@@ -201,7 +201,7 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
  # turns e.g. 2015-08-20T23:24:25.123456Z
  # into       2018-09-22T23:24:25.123456Z
 
- #NOTE: supports also C<inplace>
+ #NOTE: supports also inplace
  $p->inplace->dt_add(day => 2);
 
 
@@ -215,7 +215,7 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
  # turns e.g. 2015-08-20T23:24:25.123456Z
  # into       2015-08-20T23:24:00.000000Z
 
- #NOTE: supports also C<inplace>
+ #NOTE: supports also inplace
  $p->inplace->dt_truncate('minute');
 
 =head2 dt_unpdl
