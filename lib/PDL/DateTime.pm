@@ -14,6 +14,7 @@ use PDL::Basic qw(sequence);
 use PDL::Math  qw(floor);
 use PDL::Core  qw(longlong long double byte short);
 use Time::Moment;
+use Carp;
 
 use overload '""' => \&_stringify;
 
@@ -34,7 +35,7 @@ sub initialize {
 sub new {
   my ($class, $data, %opts) = @_;
 
-  # for 'PDL::DateTime' just make a copy                                #XXX-FIXME is copy() what we want?
+  # for 'PDL::DateTime' just make a copy
   return $data->copy(%opts) if ref $data eq 'PDL::DateTime';
 
   my $self = $class->initialize(%opts);
@@ -44,7 +45,12 @@ sub new {
   }
   elsif (ref $data eq 'PDL') {
     if ($data->type == longlong) {
-      $self->{PDL} = $data->copy;                                       #XXX-FIXME is copy() what we want?
+      $self->{PDL} = $data->copy;
+      # NOTE:
+      # $x = sequence(longlong, 6)  # type LL
+      # $u = long($x)               # == clone/copy of $x (type L)
+      # $u = longlong($x)           # == same data, same type as $x
+      # $w = PDL->new($x)           # == clone/copy of $x (type LL)
     }
     elsif ($data->type == double) {
       $self->{PDL} = longlong(floor($data + 0.5));
@@ -55,7 +61,15 @@ sub new {
     }
   }
   else {
-    die "new: invalid param ref='".ref($data)."'";
+    if (looks_like_number $data) {
+      $self->{PDL} = longlong($data);
+    }
+    elsif ($data) {
+      $self->{PDL} = longlong(_datetime_to_jumboepoch($data));
+    }
+    else {
+      croak "PDL::DateTime->new: invalid data";
+    }
   }
 
   return $self;
@@ -120,7 +134,7 @@ sub new_from_datetime {
 
 sub new_from_parts {
   my ($class, $y, $m, $d, $H, $M, $S, $U, %opts) = @_;
-  die "new_from_parts: args - y, m, d - are mandatory" unless defined $y && defined $m && defined $d;
+  croak "new_from_parts: args - y, m, d - are mandatory" unless defined $y && defined $m && defined $d;
   my $self = $class->initialize(%opts);
   $y = long($y) if ref $y eq 'ARRAY';
   $d = long($d) if ref $d eq 'ARRAY';
@@ -150,7 +164,7 @@ sub new_from_ymd {
 
 sub new_sequence {
   my ($class, $start, $count, $unit, $step, %opts) = @_;
-  die "new_sequence: args - count, unit - are mandatory" unless defined $count && defined $unit;
+  croak "new_sequence: args - count, unit - are mandatory" unless defined $count && defined $unit;
   $step = 1 unless defined $step;
   my $self = $class->initialize(%opts);
   my $dt = _fix_datetime_value($start);
@@ -187,7 +201,6 @@ sub longlong_epoch {
   # EP = JUMBOEPOCH / 1_000_000;
   # BEWARE: precision only in seconds!
   my $epoch_sec = ($self - ($self % 1_000_000)) / 1_000_000;
-  #return longlong($epoch_sec); # XXX-FIXME this returns still PDL::DateTime;
   return longlong($epoch_sec->{PDL});
 }
 
@@ -373,7 +386,7 @@ sub dt_unpdl {
 
 sub _stringify {
   my $self = shift;
-  my $data = $self->dt_unpdl;
+  my $data = $self->ndims > 0 ? $self->dt_unpdl : $self->dt_unpdl->[0];
   return _print_array($data, 0);
 }
 
@@ -453,7 +466,7 @@ sub _datetime_to_jumboepoch {
     for (@$dt) {
       my $s = _datetime_to_jumboepoch($_, $inplace);
       if ($inplace) {
-        $_ = ref $_ ? undef : $s;
+        $_ = (ref $_ ? undef : $s) if ref $_ ne 'ARRAY';
       }
       else {
         push @new, $s;
@@ -490,7 +503,7 @@ sub _jumboepoch_to_datetime {
     for (@$v) {
       my $s = _jumboepoch_to_datetime($_, $fmt, $inplace);
       if ($inplace) {
-        $_ = $s;
+        $_ = $s if ref $_ ne 'ARRAY';
       }
       else {
         push @new, $s;
