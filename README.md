@@ -243,6 +243,28 @@ See [Time::Moment](https://metacpan.org/pod/Time::Moment#strftime) (which we use
     # sets $datetime_or_epoch as value at given piddle co-ordinates
     # $datetime_or_epoch can be ISO 8601 string or epoch seconds (double or int)
 
+## dt\_diff
+
+    my $deltas = $p->dt_diff;
+    #or
+    my $deltas = $p->dt_diff($unit);
+    # $unit .. 'week', 'day', 'hour', 'minute', 'second', 'millisecond'
+
+## dt\_periodicity
+
+    my $per = $p->dt_periodicity;
+    # estimates the periodicity by calculating the median time between observations
+    # returns: "microsecond", "millisecond", "second", "minute"
+    #          "hour", "day", "week", "month", "quarter"
+    #          or an empty string
+
+## dt\_endpoints
+
+    my $end_idx = $p->dt_endpoints($unit);
+    # extract index values corresponding to the last observations
+    # given a period specified by $unit
+    # $unit .. accepts same values as dt_truncate
+
 # SEE ALSO
 
 [PDL](https://metacpan.org/pod/PDL)

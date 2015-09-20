@@ -258,6 +258,28 @@ See L<Time::Moment|Time::Moment/strftime> (which we use for stringification) for
  # sets $datetime_or_epoch as value at given piddle co-ordinates
  # $datetime_or_epoch can be ISO 8601 string or epoch seconds (double or int)
 
+=head2 dt_diff
+
+ my $deltas = $p->dt_diff;
+ #or
+ my $deltas = $p->dt_diff($unit);
+ # $unit .. 'week', 'day', 'hour', 'minute', 'second', 'millisecond'
+
+=head2 dt_periodicity
+
+ my $per = $p->dt_periodicity;
+ # estimates the periodicity by calculating the median time between observations
+ # returns: "microsecond", "millisecond", "second", "minute"
+ #          "hour", "day", "week", "month", "quarter"
+ #          or an empty string
+
+=head2 dt_endpoints
+
+ my $end_idx = $p->dt_endpoints($unit);
+ # extract index values corresponding to the last observations
+ # given a period specified by $unit
+ # $unit .. accepts same values as dt_truncate
+
 =head1 SEE ALSO
 
 L<PDL>

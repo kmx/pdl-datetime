@@ -382,6 +382,72 @@ sub dt_unpdl {
   }
 }
 
+sub dt_diff {
+  my ($self, $unit) = @_;
+  my $rv = PDL->new(longlong, 'BAD')->glue(0, $self->slice("1:-1") - $self->slice("0:-2"));
+  return $rv unless $unit;
+  return double($rv) / 604_800_000_000 if $unit eq 'week';
+  return double($rv) /  86_400_000_000 if $unit eq 'day';
+  return double($rv) /   3_600_000_000 if $unit eq 'hour';
+  return double($rv) /      60_000_000 if $unit eq 'minute';
+  return double($rv) /       1_000_000 if $unit eq 'second';
+  return double($rv) /           1_000 if $unit eq 'millisecond';
+  croak "dt_diff: invalid unit '$unit'";
+}
+
+sub dt_periodicity {
+  my $self = shift;
+  my $freq = $self->dt_diff->median;
+  if ($freq < 1_000 ) {
+    # $freq < 1 millisecond
+    return "microsecond";
+  }
+  elsif ($freq < 1_000_000 ) {
+    # 1 millisecond <= $freq < 1 second
+    return "millisecond";
+  }
+  elsif ($freq < 60_000_000 ) {
+    # 1 second <= $freq < 1 minute
+    return "second";
+  }
+  elsif ($freq < 3_600_000_000) {
+    # 1 minute <= $freq < 1 hour
+    return "minute";
+  }
+  elsif ($freq < 86_400_000_000) {
+    # 1 hour <= $freq < 24 hours
+    return "hour";
+  }
+  elsif ($freq == 86_400_000_000) {
+    # 24 hours
+    return "day";
+  }
+  elsif ($freq == 604_800_000_000) {
+    # 7 days
+    return "week";
+  }
+  elsif ($freq >= 2_419_200_000_000 && $freq <= 2_678_400_000_000 ) {
+    # 28days <= $freq <= 31days
+    return "month";
+  }
+  elsif ($freq >= 7_776_000_000_000 && $freq <=  7_948_800_000_000 ) {
+    # 90days <= $freq <= 92days
+    return "quarter";
+  }
+  return ''; # unknown
+}
+
+sub dt_endpoints {
+  my ($self, $unit) = @_;
+  croak "dt_endpoints: undefined unit" unless $unit;
+  croak "dt_endpoints: 1D piddle required" unless $self->ndims == 1;
+  croak "dt_endpoints: input not increasing" if which($self->dt_diff < 0)->nelem > 0;
+  my $diff = $self->dt_truncate($unit)->dt_diff;
+  my $mask = which($diff != 0) - 1;
+  $mask = $mask->append($self->nelem-1) unless $mask->at($mask->nelem-1) == $self->nelem-1;
+  return $mask;
+}
+
 ### private methods
 
 sub _stringify {
