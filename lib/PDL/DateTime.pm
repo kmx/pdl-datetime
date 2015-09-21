@@ -16,7 +16,13 @@ use PDL::Core  qw(longlong long double byte short);
 use Time::Moment;
 use Carp;
 
-use overload '""' => \&_stringify;
+use overload '>'  => \&_num_compare_gt,
+             '<'  => \&_num_compare_lt,
+             '>=' => \&_num_compare_ge,
+             '<=' => \&_num_compare_le,
+             '==' => \&_num_compare_eq,
+             '!=' => \&_num_compare_ne,
+             '""' => \&_stringify;
 
 my %INC_SECONDS = (
   week   => 60 * 60 * 24 * 7,
@@ -454,6 +460,42 @@ sub _stringify {
   my $self = shift;
   my $data = $self->ndims > 0 ? $self->dt_unpdl : $self->dt_unpdl->[0];
   return _print_array($data, 0);
+}
+
+sub _num_compare_gt {
+  my ($self, $other, $swap) = @_;
+  $other = PDL::DateTime->new_from_datetime($other) if !ref $other && !looks_like_number($other);
+  PDL::gt($self, $other, $swap);
+}
+
+sub _num_compare_lt {
+  my ($self, $other, $swap) = @_;
+  $other = PDL::DateTime->new_from_datetime($other) if !ref $other && !looks_like_number($other);
+  PDL::lt($self, $other, $swap);
+}
+
+sub _num_compare_ge {
+  my ($self, $other, $swap) = @_;
+  $other = PDL::DateTime->new_from_datetime($other) if !ref $other && !looks_like_number($other);
+  PDL::ge($self, $other, $swap);
+}
+
+sub _num_compare_le {
+  my ($self, $other, $swap) = @_;
+  $other = PDL::DateTime->new_from_datetime($other) if !ref $other && !looks_like_number($other);
+  PDL::gt($self, $other, $swap);
+}
+
+sub _num_compare_eq {
+  my ($self, $other, $swap) = @_;
+  $other = PDL::DateTime->new_from_datetime($other) if !ref $other && !looks_like_number($other);
+  PDL::eq($self, $other, $swap);
+}
+
+sub _num_compare_ne {
+  my ($self, $other, $swap) = @_;
+  $other = PDL::DateTime->new_from_datetime($other) if !ref $other && !looks_like_number($other);
+  PDL::ne($self, $other, $swap);
 }
 
 sub _autodetect_strftime_format {
