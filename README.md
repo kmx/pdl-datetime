@@ -18,6 +18,41 @@ PDL::DateTime - piddle for keeping high precision (microsecond) timestamps
 - this module works only on perls with 64-bit integers, check `perl -V:ivsize` (should be `ivsize='8'`)
 - no chance for nanoseconds precision, maybe in a separate module e.g. `PDL::DateTime::Ns`
 
+# SYNOPSIS
+
+    use 5.010;
+    use PDL;
+    use PDL::DateTime;
+
+    my $dt_1 = PDL::DateTime->new_sequence('2015-09-20T15:45', 5, 'hour');
+    say $dt_1;
+    # [ 2015-09-20T15:45 2015-09-20T16:45 2015-09-20T17:45 2015-09-20T18:45 2015-09-20T19:45 ]
+
+    say $dt_1->where($dt_1 > '2015-09-20T17:00');
+    # [ 2015-09-20T17:45 2015-09-20T18:45 2015-09-20T19:45 ]
+
+    say $dt_1->dt_hour;
+    # [15 16 17 18 19]
+
+    say $dt_1->dt_minute;
+    # [45 45 45 45 45]
+
+    say $dt_1->dt_add(year=> 4, month=>6, day=>3);
+    # [ 2020-03-23T15:45 2020-03-23T16:45 2020-03-23T17:45 2020-03-23T18:45 2020-03-23T19:45 ]
+
+    my $dt_2 = PDL::DateTime->new_sequence('2015-11-22T23:23:23.654321', 4, 'day');
+    say $dt_2;
+    # [ 2015-11-22T23:23:23.654321 2015-11-23T23:23:23.654321 2015-11-24T23:23:23.654321 2015-11-25T23:23:23.654321 ]
+
+    say $dt_2->dt_truncate('day');
+    # [ 2015-11-22 2015-11-23 2015-11-24 2015-11-25 ]
+
+    say $dt_2->dt_truncate('hour');
+    # [ 2015-11-22T23:00 2015-11-23T23:00 2015-11-24T23:00 2015-11-25T23:00 ]
+
+    say $dt_2->dt_truncate('minute');
+    # [ 2015-11-22T23:23 2015-11-23T23:23 2015-11-24T23:23 2015-11-25T23:23 ]
+
 # FUNCTIONS
 
 ## new
