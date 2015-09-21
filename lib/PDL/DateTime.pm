@@ -173,8 +173,7 @@ sub new_sequence {
   croak "new_sequence: args - count, unit - are mandatory" unless defined $count && defined $unit;
   $step = 1 unless defined $step;
   my $self = $class->initialize(%opts);
-  my $dt = _fix_datetime_value($start);
-  my $tm_start = $dt eq 'now' ? Time::Moment->now_utc : Time::Moment->from_string($dt, lenient=>1);
+  my $tm_start = $start eq 'now' ? Time::Moment->now_utc : _dt2tm($start);
   my $microseconds = $tm_start->microsecond;
   if ($unit eq 'year') {
     # slow :(
@@ -459,7 +458,9 @@ sub dt_endpoints {
 sub _stringify {
   my $self = shift;
   my $data = $self->ndims > 0 ? $self->dt_unpdl : $self->dt_unpdl->[0];
-  return _print_array($data, 0);
+  my $rv = _print_array($data, 0);
+  $rv =~ s/\n$//;
+  return $rv;
 }
 
 sub _num_compare_gt {
@@ -537,7 +538,36 @@ sub _allign_m_y {
   return PDL::DateTime->new(longlong(floor($rdate) - 719163) * 86_400_000_000);
 }
 
+### public functions (used e.g. by PDL::IO::CSV)
+
+sub dt2ll {
+  eval {
+    my $tm = Time::Moment->from_string(_fix_datetime_value(shift), lenient=>1);
+    $tm->epoch * 1_000_000 + $tm->microsecond;
+  };
+}
+
+sub ll2dt {
+  my $v = shift;
+  my $us = int($v % 1_000_000);
+  my $ts = int(($v - $us) / 1_000_000);
+  my $rv = eval { Time::Moment->from_epoch($ts, $us * 1000)->to_string(reduced=>1) } or return;
+  $rv =~ s/(T00:00)?Z$//;
+  return $rv;
+}
+
 ### private functions
+
+sub _dt2tm {
+  eval { Time::Moment->from_string(_fix_datetime_value(shift), lenient=>1) };
+}
+
+sub _ll2tm {
+  my $v = shift;
+  my $us = int($v % 1_000_000);
+  my $ts = int(($v - $us) / 1_000_000);
+  eval { Time::Moment->from_epoch($ts, $us * 1000) };
+}
 
 sub _print_array {
   my ($val, $level) = @_;
@@ -587,13 +617,7 @@ sub _datetime_to_jumboepoch {
       return int POSIX::floor($dt * 1_000_000 + 0.5);
     }
     elsif (!ref $dt) {
-      if ($dt eq 'now') {
-        $tm = Time::Moment->now_utc;
-      }
-      else {
-        $dt = _fix_datetime_value($dt);
-        $tm = eval { Time::Moment->from_string($dt, lenient=>1) };
-      }
+      $tm = ($dt eq 'now') ? Time::Moment->now_utc : _dt2tm($dt);
     }
     elsif (ref $dt eq 'DateTime' || ref $dt eq 'Time::Piece') {
       $tm = eval { Time::Moment->from_object($dt) };
@@ -602,9 +626,7 @@ sub _datetime_to_jumboepoch {
       $tm = $dt;
     }
     return undef unless $tm;
-    my $ep = $tm->epoch;
-    my $us = $tm->microsecond;
-    return int($ep * 1_000_000 + $us);
+    return int($tm->epoch * 1_000_000 + $tm->microsecond);
   }
 }
 
@@ -625,9 +647,7 @@ sub _jumboepoch_to_datetime {
     return \@new if !$inplace;
   }
   elsif (!ref $v) {
-    my $us = int($v % 1_000_000);
-    my $ts = int(($v - $us) / 1_000_000);
-    my $tm = eval { Time::Moment->from_epoch($ts, $us * 1000) };
+    my $tm = _ll2tm($v);
     return 'BAD' unless defined $tm;
     if ($fmt eq 'Time::Moment') {
       return $tm;
