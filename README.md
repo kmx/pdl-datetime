@@ -122,7 +122,8 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     my $p = PDL::DateTime->new_sequence($start, $count, $unit, $step);
     # $start .. ISO 8601 date time string (starting datetime) or 'now'
     # $count .. length of the sequence (incl. starting point)
-    # $unit  .. step unit 'year', 'month', 'week', 'day', 'hour', 'minute', 'second'
+    # $unit  .. step unit 'year', 'quarter', 'month', 'week',
+    #                     'day', 'hour', 'minute', 'second'
     # $step  .. how many units there are between two seq elements (default: 1)
 
 ## double\_epoch
@@ -204,11 +205,11 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 
 ## dt\_add
 
-    my $p->dt_add($num, $unit);
+    my $p->dt_add($unit, $num);
     # adds $num datetime units
     # $num can be positive (addition) or negative (subtraction)
-    # $unit .. "year", "month", "week", "day", "hour", "minute",
-    #          "second", "millisecond", "microsecond"
+    # $unit .. 'year', 'quarter', 'month', 'week', 'day', 'hour',
+    #          'minute', 'second', 'millisecond', 'microsecond'
 
     my $p->dt_add(day => 2);
     # turns e.g. 2015-08-20T23:24:25.123456Z
@@ -228,8 +229,8 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 ## dt\_truncate
 
     my $p->dt_truncate($unit);
-    # $unit .. "year", "month", "week", "day", "hour", "minute",
-    #          "second", "millisecond", "microsecond"
+    # $unit .. 'year', 'quarter', 'month', 'week', 'day', 'hour',
+    #          'minute', 'second', 'millisecond', 'microsecond'
 
     my $p->dt_truncate('minute');
     # turns e.g. 2015-08-20T23:24:25.123456Z
@@ -293,12 +294,96 @@ See [Time::Moment](https://metacpan.org/pod/Time::Moment#strftime) (which we use
     #          "hour", "day", "week", "month", "quarter"
     #          or an empty string
 
+## dt\_startpoints
+
+Extract index values corresponding to the first observations given a period specified by `$unit`
+
+    my $end_idx = $p->dt_startpoints($unit);
+    # $unit .. accepts same values as dt_truncate
+
+Example:
+
+    my $dt = PDL::DateTime->new_from_datetime([qw/
+       2015-03-24 2015-03-25 2015-03-28 2015-04-01
+       2015-04-02 2015-04-30 2015-05-01 2015-05-10
+    /]);
+
+    print $dt->dt_startpoints('month');
+    # prints: [0 3 6]
+
+    print $dt->dt_startpoints('quarter');
+    # prints: [0 3]
+
 ## dt\_endpoints
 
+Extract index values corresponding to the last observations given a period specified by `$unit`
+
     my $end_idx = $p->dt_endpoints($unit);
-    # extract index values corresponding to the last observations
-    # given a period specified by $unit
     # $unit .. accepts same values as dt_truncate
+
+Example:
+
+    my $dt = PDL::DateTime->new_from_datetime([qw/
+       2015-03-24 2015-03-25 2015-03-28 2015-04-01
+       2015-04-02 2015-04-30 2015-05-01 2015-05-10
+    /]);
+
+    print $dt->dt_endpoints('month');
+    # prints: [2 5 7]
+
+    print $dt->dt_endpoints('quarter');
+    # prints: [2 7]
+
+## dt\_slices
+
+Combines ["dt\_startpoints"](#dt_startpoints) and ["dt\_endpoints"](#dt_endpoints) and returns 2D piddle like this:
+
+    my $dt = PDL::DateTime->new_from_datetime([qw/
+       2015-03-24 2015-03-25 2015-03-28 2015-04-01
+       2015-04-02 2015-04-30 2015-05-01 2015-05-10
+    /]);
+
+    print $dt->dt_slices('month');
+    # [
+    #  [0 2]    ... start index == 0, end index == 2
+    #  [3 5]    ... start index == 3, end index == 5
+    #  [6 7]    ... start index == 6, end index == 7
+    # ]
+
+    print $dt->dt_slices('quarter');
+    # [
+    #  [0 2]
+    #  [3 7]
+    # ]
+
+## dt\_nperiods
+
+Calculate the number of periods specified by `$unit` in a given time series.
+The resulting value is approximate, derived from counting the endpoints.
+
+    $dt->dt_nperiods($unit)
+    # $unit .. 'year', 'quarter', 'month', 'week', 'day', 'hour',
+    #          'minute', 'second', 'millisecond', 'microsecond'
+
+## is\_increasing
+
+    print $dt->is_increasing ? "is increasing" : "no";
+    #or
+    print $dt->is_increasing(1) ? "is strictly increasing" : "no";
+
+## is\_decreasing
+
+    print $dt->is_decreasing ? "is decreasing" : "no";
+    #or
+    print $dt->is_decreasing(1) ? "is strictly decreasing" : "no";
+
+## is\_uniq
+
+    print $dt->is_uniq ? "all items are uniq" : "no";
+
+## is\_regular
+
+    print $dt->is_regular ? "all periods between items are the same" : "no";
 
 # SEE ALSO
 
