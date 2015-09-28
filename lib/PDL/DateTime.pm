@@ -12,7 +12,7 @@ use PDL::Types;
 use PDL::Primitive;
 use PDL::Basic qw(sequence);
 use PDL::Math  qw(floor);
-use PDL::Core  qw(longlong long double byte short);
+use PDL::Core  qw(longlong long double byte short indx);
 use Time::Moment;
 use Carp;
 
@@ -181,13 +181,19 @@ sub new_sequence {
     push @epoch, $tm_start->plus_years($_*$step)->epoch for (1..$count-1);
     $self->{PDL} = longlong(\@epoch) * 1_000_000 + $microseconds;
   }
+  if ($unit eq 'quarter') {
+    # slow :(
+    my @epoch = ($tm_start->epoch);
+    push @epoch, $tm_start->plus_months(3*$_*$step)->epoch for (1..$count-1);
+    $self->{PDL} = longlong(\@epoch) * 1_000_000 + $microseconds;
+  }
   if ($unit eq 'month') {
     # slow :(
     my @epoch = ($tm_start->epoch);
     push @epoch, $tm_start->plus_months($_*$step)->epoch for (1..$count-1);
     $self->{PDL} = longlong(\@epoch) * 1_000_000 + $microseconds;
   }
-  elsif (my $inc = $INC_SECONDS{$unit}) {
+  elsif (my $inc = $INC_SECONDS{$unit}) { # week day hour minute second
     my $epoch = $tm_start->epoch;
     $self->{PDL} = (longlong(floor(sequence($count) * $step * $inc + 0.5)) + $epoch) * 1_000_000 + $microseconds;
   }
@@ -279,6 +285,9 @@ sub dt_add {
       if ($unit eq 'month') {
         $self += $self->_plus_delta_m($num);
       }
+      elsif ($unit eq 'quarter') {
+        $self += $self->_plus_delta_m($num * 3);
+      }
       elsif ($unit eq 'year') {
         $self += $self->_plus_delta_m($num * 12);
       }
@@ -288,7 +297,7 @@ sub dt_add {
       elsif ($unit eq 'microsecond') {
         $self += $num;
       }
-      elsif (my $inc = $INC_SECONDS{$unit}) {
+      elsif (my $inc = $INC_SECONDS{$unit}) { # week day hour minute second
         my $add = longlong(floor($num * $inc * 1_000_000 + 0.5));
         $self->inplace->plus($add, 0);
       }
@@ -302,6 +311,9 @@ sub dt_add {
       if ($unit eq 'month') {
         $rv += $rv->_plus_delta_m($num);
       }
+      elsif ($unit eq 'quarter') {
+        $rv += $rv->_plus_delta_m($num * 3);
+      }
       elsif ($unit eq 'year') {
         $rv += $rv->_plus_delta_m($num * 12);
       }
@@ -311,7 +323,7 @@ sub dt_add {
       elsif ($unit eq 'microsecond') {
         $rv += $num;
       }
-      elsif(my $inc = $INC_SECONDS{$unit}) {
+      elsif(my $inc = $INC_SECONDS{$unit}) { # week day hour minute second
         $rv += longlong(floor($num * $inc * 1_000_000 + 0.5));
       }
     }
@@ -325,16 +337,19 @@ sub dt_truncate {
     $self->set_inplace(0);
     return $self unless defined $unit;
     if ($unit eq 'year') {
-      $self->{PDL} = $self->_allign_m_y(0, 1)->{PDL};
+      $self->{PDL} = $self->_allign_myq(0, 1, 0)->{PDL};
+    }
+    elsif ($unit eq 'quarter') {
+      $self->{PDL} = $self->_allign_myq(0, 0, 1)->{PDL};
     }
     elsif ($unit eq 'month') {
-      $self->{PDL} = $self->_allign_m_y(1, 0)->{PDL};
+      $self->{PDL} = $self->_allign_myq(1, 0, 0)->{PDL};
     }
     elsif ($unit eq 'millisecond') {
       my $sub = $self % 1_000;
       $self->inplace->minus($sub, 0);
     }
-    elsif (my $inc = $INC_SECONDS{$unit}) {
+    elsif (my $inc = $INC_SECONDS{$unit}) { # week day hour minute second
       my $sub = $self % ($inc * 1_000_000);
       $self->inplace->minus($sub, 0);
     }
@@ -342,16 +357,19 @@ sub dt_truncate {
   }
   else {
     return unless defined $unit;
-    if ($unit eq 'month') {
-      return $self->_allign_m_y(1, 0);
+    if ($unit eq 'year') {
+      return $self->_allign_myq(0, 1, 0);
     }
-    elsif ($unit eq 'year') {
-      return $self->_allign_m_y(0, 1);
+    elsif ($unit eq 'quarter') {
+      return $self->_allign_myq(0, 0, 1);
+    }
+    elsif ($unit eq 'month') {
+      return $self->_allign_myq(1, 0, 0);
     }
     elsif ($unit eq 'millisecond') {
       return $self - $self % 1_000;
     }
-    elsif (my $inc = $INC_SECONDS{$unit}) {
+    elsif (my $inc = $INC_SECONDS{$unit}) { # week day hour minute second
       return $self - $self % ($inc * 1_000_000);
     }
   }
@@ -442,15 +460,63 @@ sub dt_periodicity {
   return ''; # unknown
 }
 
+sub dt_startpoints {
+  my ($self, $unit) = @_;
+  croak "dt_startpoints: undefined unit" unless $unit;
+  croak "dt_startpoints: 1D piddle required" unless $self->ndims == 1;
+  croak "dt_startpoints: input not increasing" unless $self->is_increasing;
+  return indx(0)->append($self->dt_endpoints($unit)->slice("0:-2") + 1);
+}
+
 sub dt_endpoints {
   my ($self, $unit) = @_;
   croak "dt_endpoints: undefined unit" unless $unit;
   croak "dt_endpoints: 1D piddle required" unless $self->ndims == 1;
-  croak "dt_endpoints: input not increasing" if which($self->dt_diff < 0)->nelem > 0;
+  croak "dt_endpoints: input not increasing" unless $self->is_increasing;
   my $diff = $self->dt_truncate($unit)->dt_diff;
-  my $mask = which($diff != 0) - 1;
-  $mask = $mask->append($self->nelem-1) unless $mask->at($mask->nelem-1) == $self->nelem-1;
-  return $mask;
+  my $end = which($diff != 0) - 1;
+  $end = $end->append($self->nelem-1) unless $end->at($end->nelem-1) == $end->nelem-1;
+  return indx($end);
+}
+
+sub dt_slices {
+  my ($self, $unit) = @_;
+  croak "dt_slices: undefined unit" unless $unit;
+  croak "dt_slices: 1D piddle required" unless $self->ndims == 1;
+  croak "dt_slices: input not increasing" unless $self->is_increasing;
+  my $end   = $self->dt_endpoints($unit);
+  my $start = indx(0)->append($end->slice("0:-2") + 1);
+  return $start->cat($end)->transpose;
+}
+
+sub dt_nperiods {
+  my ($self, $unit) = @_;
+  croak "dt_nperiods: undefined unit" unless $unit;
+  return $self->dt_endpoints($unit)->nelem;
+}
+
+sub is_increasing {
+  my ($self, $strictly) = @_;
+  return !(which($self->dt_diff <= 0)->nelem > 0) if $strictly;
+  return !(which($self->dt_diff <  0)->nelem > 0);
+}
+
+sub is_decreasing {
+  my ($self, $strictly) = @_;
+  return !(which($self->dt_diff >= 0)->nelem > 0) if $strictly;
+  return !(which($self->dt_diff >  0)->nelem > 0);
+}
+
+sub is_uniq {
+  my $self = shift;
+  my $diff = $self->qsort->dt_diff;
+  return !(which($diff == 0)->nelem > 0);
+}
+
+sub is_regular {
+  my $self = shift;
+  my $diff = $self->dt_diff->qsort;
+  return $diff->min == $diff->max && $diff->max > 0;
 }
 
 ### private methods
@@ -528,12 +594,13 @@ sub _plus_delta_m {
   return $rv;
 }
 
-sub _allign_m_y {
-  my ($self, $mflag, $yflag) = @_;
+sub _allign_myq {
+  my ($self, $mflag, $yflag, $qflag) = @_;
   my $rdate = $self->double_ratadie;
   my ($y, $m, $d) = _ratadie2ymd($rdate);
-  $d .= 1 if $mflag || $yflag;
+  $d .= 1 if $mflag || $yflag || $qflag;
   $m .= 1 if $yflag;
+  $m -= (($m-1) % 3) if $qflag;
   $rdate = _ymd2ratadie($y, $m, $d);
   return PDL::DateTime->new(longlong(floor($rdate) - 719163) * 86_400_000_000);
 }
