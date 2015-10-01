@@ -332,18 +332,18 @@ sub dt_add {
 }
 
 sub dt_truncate {
-  my ($self, $unit) = @_;
+  my ($self, $unit, $up) = @_;
   if ($self->is_inplace) {
     $self->set_inplace(0);
     return $self unless defined $unit;
     if ($unit eq 'year') {
-      $self->{PDL} = $self->_allign_myq(0, 1, 0)->{PDL};
+      $self->{PDL} = $self->_allign_myq(0, 1, 0, $up)->{PDL};
     }
     elsif ($unit eq 'quarter') {
-      $self->{PDL} = $self->_allign_myq(0, 0, 1)->{PDL};
+      $self->{PDL} = $self->_allign_myq(0, 0, 1, $up)->{PDL};
     }
     elsif ($unit eq 'month') {
-      $self->{PDL} = $self->_allign_myq(1, 0, 0)->{PDL};
+      $self->{PDL} = $self->_allign_myq(1, 0, 0, $up)->{PDL};
     }
     elsif ($unit eq 'millisecond') {
       my $sub = $self % 1_000;
@@ -358,13 +358,13 @@ sub dt_truncate {
   else {
     return unless defined $unit;
     if ($unit eq 'year') {
-      return $self->_allign_myq(0, 1, 0);
+      return $self->_allign_myq(0, 1, 0, $up);
     }
     elsif ($unit eq 'quarter') {
-      return $self->_allign_myq(0, 0, 1);
+      return $self->_allign_myq(0, 0, 1, $up);
     }
     elsif ($unit eq 'month') {
-      return $self->_allign_myq(1, 0, 0);
+      return $self->_allign_myq(1, 0, 0, $up);
     }
     elsif ($unit eq 'millisecond') {
       return $self - $self % 1_000;
@@ -595,12 +595,12 @@ sub _plus_delta_m {
 }
 
 sub _allign_myq {
-  my ($self, $mflag, $yflag, $qflag) = @_;
+  my ($self, $mflag, $yflag, $qflag, $up) = @_;
   my $rdate = $self->double_ratadie;
   my ($y, $m, $d) = _ratadie2ymd($rdate);
-  $d .= 1 if $mflag || $yflag || $qflag;
-  $m .= 1 if $yflag;
-  $m -= (($m-1) % 3) if $qflag;
+  $m .= $up ? 12 : 1 if $yflag;
+  $m  = $up ? $m+((3-$m)%3) : $m-(($m-1)%3) if $qflag;
+  $d .= $up ? _days_in_month($y, $m) : 1;
   $rdate = _ymd2ratadie($y, $m, $d);
   return PDL::DateTime->new(longlong(floor($rdate) - 719163) * 86_400_000_000);
 }
@@ -792,6 +792,14 @@ sub _ratadie2ymd {
   $m -= $m12 * 12;
 
   return ($y, $m, $d);
+}
+
+sub _days_in_month {
+  my ($y, $m) = @_;
+  my $dec_simple = (2*($m==2) + ($m==4) + ($m==6) + ($m==9) + ($m==11));
+  my $is_nonleap_yr = (($y % 4)!=0) + (($y % 100)==0) - (($y % 400)==0);
+  my $dec_nonleap_feb  = ($m==2) * $is_nonleap_yr;
+  return - $dec_simple - $dec_nonleap_feb + 31;
 }
 
 1;
