@@ -236,6 +236,15 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     # turns e.g. 2015-08-20T23:24:25.123456Z
     # into       2015-08-20T23:24:00.000000Z
 
+    # for units 'year', 'quarter', 'month' there is second optional param
+    # let's have: 2015-08-20T23:24:25.123456Z
+    $p->dt_truncate('month');      # -> 2015-08-01
+    $p->dt_truncate('month', 1);   # -> 2015-08-31
+    $p->dt_truncate('quarter');    # -> 2015-07-01
+    $p->dt_truncate('quarter', 1); # -> 2015-09-30
+    $p->dt_truncate('year');       # -> 2015-01-01
+    $p->dt_truncate('year', 1);    # -> 2015-12-31
+
     #NOTE: supports also inplace
     $p->inplace->dt_truncate('minute');
 
