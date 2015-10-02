@@ -226,7 +226,7 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     #NOTE: supports also inplace
     $p->inplace->dt_add(day => 2);
 
-## dt\_truncate
+## dt\_align
 
     my $p->dt_align($unit);
     # $unit .. 'year', 'quarter', 'month', 'week', 'day', 'hour',
