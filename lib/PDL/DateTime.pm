@@ -272,7 +272,7 @@ sub dt_day_of_week {
 sub dt_day_of_year {
   my $self = shift;
   my $rd1 = long(floor($self->double_ratadie));
-  my $rd2 = long(floor($self->dt_truncate('year')->double_ratadie));
+  my $rd2 = long(floor($self->dt_align('year')->double_ratadie));
   return PDL->new(short, ($rd1 - $rd2 + 1));
 }
 
@@ -331,7 +331,7 @@ sub dt_add {
   }
 }
 
-sub dt_truncate {
+sub dt_align {
   my ($self, $unit, $up) = @_;
   if ($self->is_inplace) {
     $self->set_inplace(0);
@@ -473,7 +473,7 @@ sub dt_endpoints {
   croak "dt_endpoints: undefined unit" unless $unit;
   croak "dt_endpoints: 1D piddle required" unless $self->ndims == 1;
   croak "dt_endpoints: input not increasing" unless $self->is_increasing;
-  my $diff = $self->dt_truncate($unit)->dt_diff;
+  my $diff = $self->dt_align($unit)->dt_diff;
   my $end = which($diff != 0) - 1;
   $end = $end->append($self->nelem-1) unless $end->at($end->nelem-1) == $end->nelem-1;
   return indx($end);

@@ -44,13 +44,13 @@ PDL::DateTime - piddle for keeping high precision (microsecond) timestamps
     say $dt_2;
     # [ 2015-11-22T23:23:23.654321 2015-11-23T23:23:23.654321 2015-11-24T23:23:23.654321 2015-11-25T23:23:23.654321 ]
 
-    say $dt_2->dt_truncate('day');
+    say $dt_2->dt_align('day');
     # [ 2015-11-22 2015-11-23 2015-11-24 2015-11-25 ]
 
-    say $dt_2->dt_truncate('hour');
+    say $dt_2->dt_align('hour');
     # [ 2015-11-22T23:00 2015-11-23T23:00 2015-11-24T23:00 2015-11-25T23:00 ]
 
-    say $dt_2->dt_truncate('minute');
+    say $dt_2->dt_align('minute');
     # [ 2015-11-22T23:23 2015-11-23T23:23 2015-11-24T23:23 2015-11-25T23:23 ]
 
 # FUNCTIONS
@@ -228,25 +228,25 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 
 ## dt\_truncate
 
-    my $p->dt_truncate($unit);
+    my $p->dt_align($unit);
     # $unit .. 'year', 'quarter', 'month', 'week', 'day', 'hour',
     #          'minute', 'second', 'millisecond', 'microsecond'
 
-    my $p->dt_truncate('minute');
+    my $p->dt_align('minute');
     # turns e.g. 2015-08-20T23:24:25.123456Z
     # into       2015-08-20T23:24:00.000000Z
 
     # for units 'year', 'quarter', 'month' there is second optional param
     # let's have: 2015-08-20T23:24:25.123456Z
-    $p->dt_truncate('month');      # -> 2015-08-01
-    $p->dt_truncate('month', 1);   # -> 2015-08-31
-    $p->dt_truncate('quarter');    # -> 2015-07-01
-    $p->dt_truncate('quarter', 1); # -> 2015-09-30
-    $p->dt_truncate('year');       # -> 2015-01-01
-    $p->dt_truncate('year', 1);    # -> 2015-12-31
+    $p->dt_align('month');      # -> 2015-08-01
+    $p->dt_align('month', 1);   # -> 2015-08-31
+    $p->dt_align('quarter');    # -> 2015-07-01
+    $p->dt_align('quarter', 1); # -> 2015-09-30
+    $p->dt_align('year');       # -> 2015-01-01
+    $p->dt_align('year', 1);    # -> 2015-12-31
 
     #NOTE: supports also inplace
-    $p->inplace->dt_truncate('minute');
+    $p->inplace->dt_align('minute');
 
 ## dt\_unpdl
 
@@ -308,7 +308,7 @@ See [Time::Moment](https://metacpan.org/pod/Time::Moment#strftime) (which we use
 Extract index values corresponding to the first observations given a period specified by `$unit`
 
     my $end_idx = $p->dt_startpoints($unit);
-    # $unit .. accepts same values as dt_truncate
+    # $unit .. accepts same values as dt_align
 
 Example:
 
@@ -328,7 +328,7 @@ Example:
 Extract index values corresponding to the last observations given a period specified by `$unit`
 
     my $end_idx = $p->dt_endpoints($unit);
-    # $unit .. accepts same values as dt_truncate
+    # $unit .. accepts same values as dt_align
 
 Example:
 

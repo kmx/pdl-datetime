@@ -327,7 +327,7 @@ ok(all($dt1 == $dt0),                                 'new_from_datetime vs. new
 ok(all($dt1 == $dt2),                                 'new_from_datetime vs. new_from_parts');
 ok(all($dt1 == $dt3),                                 'new_from_datetime vs. new_from_parts');
 ok(all($dt1 == $pdl_epoch_us),                        'new_from_datetime vs. pdl_epoch_us');
-ok(all($dt1->dt_truncate('day') == $dt4),             'compare dt/ymd');
+ok(all($dt1->dt_align('day') == $dt4),             'compare dt/ymd');
 ok(all($y == $pdl_year),                              'part year');
 ok(all($m == $pdl_month),                             'part month');
 ok(all($d == $pdl_day_of_month),                      'part day_of_month');
@@ -340,11 +340,11 @@ ok(all($dt1->dt_microsecond == $pdl_microsecond),     'part microsecond');
 ok(all(floor($dt1->double_epoch) == $pdl_epoch),      'epoch');
 ok(all(floor($dt1->double_serialdate) == $pdl_sdate), 'serial date');
 ok(all(floor($dt1->double_ratadie) == $pdl_rdate),    'rata die');
-ok(all($dt1->dt_truncate('year')   == $pdl_truncy),   'dt_truncate year');
-ok(all($dt1->dt_truncate('month')  == $pdl_truncm),   'dt_truncate month');
-ok(all($dt1->dt_truncate('hour')   == $pdl_truncH),   'dt_truncate hour');
-ok(all($dt1->dt_truncate('minute') == $pdl_truncM),   'dt_truncate minute');
-ok(all($dt1->dt_truncate('second') == $pdl_truncS),   'dt_truncate second');
+ok(all($dt1->dt_align('year')   == $pdl_truncy),   'dt_align year');
+ok(all($dt1->dt_align('month')  == $pdl_truncm),   'dt_align month');
+ok(all($dt1->dt_align('hour')   == $pdl_truncH),   'dt_align hour');
+ok(all($dt1->dt_align('minute') == $pdl_truncM),   'dt_align minute');
+ok(all($dt1->dt_align('second') == $pdl_truncS),   'dt_align second');
 
 is_deeply( $dt1->dt_unpdl("%Y-%m-%dT%H:%M:%S.%6N"), \@datetime, "dt_unpdl");
 is_deeply( $dt1->unpdl, \@epoch_us, "unpdl");
