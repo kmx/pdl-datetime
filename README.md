@@ -238,12 +238,14 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 
     # for units 'year', 'quarter', 'month' there is second optional param
     # let's have: 2015-08-20T23:24:25.123456Z
-    $p->dt_align('month');      # -> 2015-08-01
-    $p->dt_align('month', 1);   # -> 2015-08-31
-    $p->dt_align('quarter');    # -> 2015-07-01
-    $p->dt_align('quarter', 1); # -> 2015-09-30
     $p->dt_align('year');       # -> 2015-01-01
-    $p->dt_align('year', 1);    # -> 2015-12-31
+    $p->dt_align('year', 1);    # -> 2015-12-31 (the last day of year)
+    $p->dt_align('quarter');    # -> 2015-07-01
+    $p->dt_align('quarter', 1); # -> 2015-09-30 (the last day of quarter)
+    $p->dt_align('month');      # -> 2015-08-01
+    $p->dt_align('month', 1);   # -> 2015-08-31 (the last day of month)
+    $p->dt_align('week');       # -> 2015-08-17 (Monday)
+    $p->dt_align('week', 1);    # -> 2015-08-23 (Sunday)
 
     #NOTE: supports also inplace
     $p->inplace->dt_align('minute');

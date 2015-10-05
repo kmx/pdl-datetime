@@ -351,6 +351,7 @@ sub dt_align {
     }
     elsif (my $inc = $INC_SECONDS{$unit}) { # week day hour minute second
       my $sub = $unit eq 'week' ? ($self + 3 * 60 * 60 * 24 * 1_000_000) % ($inc * 1_000_000) : $self % ($inc * 1_000_000);
+      $sub -= 6 * 60 * 60 * 24 * 1_000_000 if $up && $unit eq 'week';
       $self->inplace->minus($sub, 0);
     }
     return $self;
@@ -371,6 +372,7 @@ sub dt_align {
     }
     elsif (my $inc = $INC_SECONDS{$unit}) { # week day hour minute second
       my $sub = $unit eq 'week' ? ($self + 3 * 60 * 60 * 24 * 1_000_000) % ($inc * 1_000_000) : $self % ($inc * 1_000_000);
+      $sub -= 6 * 60 * 60 * 24 * 1_000_000 if $up && $unit eq 'week';
       return $self - $sub;
     }
   }
