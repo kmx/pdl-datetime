@@ -410,6 +410,7 @@ sub dt_unpdl {
 
 sub dt_diff {
   my ($self, $unit) = @_;
+  return PDL->new('BAD')->reshape(1) if $self->nelem == 1;
   my $rv = PDL->new(longlong, 'BAD')->glue(0, $self->slice("1:-1") - $self->slice("0:-2"));
   return $rv unless $unit;
   return double($rv) / 604_800_000_000 if $unit eq 'week';
@@ -424,6 +425,7 @@ sub dt_diff {
 sub dt_periodicity {
   my $self = shift;
   my $freq = $self->dt_diff->median;
+  return '' if $freq eq 'BAD';
   if ($freq < 1_000 ) {
     # $freq < 1 millisecond
     return "microsecond";
@@ -460,6 +462,10 @@ sub dt_periodicity {
     # 90days <= $freq <= 92days
     return "quarter";
   }
+  elsif ($freq >= 31_536_000_000_000 && $freq <=  31_622_400_000_000 ) {
+    # 365days <= $freq <= 366days
+    return "year";
+  }
   return ''; # unknown
 }
 
@@ -478,7 +484,12 @@ sub dt_endpoints {
   croak "dt_endpoints: input not increasing" unless $self->is_increasing;
   my $diff = $self->dt_align($unit)->dt_diff;
   my $end = which($diff != 0) - 1;
-  $end = $end->append($self->nelem-1) unless $end->at($end->nelem-1) == $end->nelem-1;
+  if ($end->nelem == 0) {
+    $end = indx([$self->nelem-1]);
+  }
+  else {
+    $end = $end->append($self->nelem-1) unless $end->at($end->nelem-1) == $end->nelem-1;
+  }
   return indx($end);
 }
 
@@ -488,7 +499,8 @@ sub dt_slices {
   croak "dt_slices: 1D piddle required" unless $self->ndims == 1;
   croak "dt_slices: input not increasing" unless $self->is_increasing;
   my $end   = $self->dt_endpoints($unit);
-  my $start = indx(0)->append($end->slice("0:-2") + 1);
+  my $start = indx([0]);
+  $start = $start->append($end->slice("0:-2") + 1) if $end->nelem > 1;
   return $start->cat($end)->transpose;
 }
 
@@ -518,8 +530,11 @@ sub is_uniq {
 
 sub is_regular {
   my $self = shift;
+  my $dt = $self->dt_diff;
   my $diff = $self->dt_diff->qsort;
-  return $diff->min == $diff->max && $diff->max > 0;
+  my $min = $diff->min;
+  my $max = $diff->max;
+   return ($min ne "BAD") && ($max ne "BAD") && ($min == $max) && ($max > 0);
 }
 
 ### private methods
@@ -553,7 +568,7 @@ sub _num_compare_ge {
 sub _num_compare_le {
   my ($self, $other, $swap) = @_;
   $other = PDL::DateTime->new_from_datetime($other) if !ref $other && !looks_like_number($other);
-  PDL::gt($self, $other, $swap);
+  PDL::le($self, $other, $swap);
 }
 
 sub _num_compare_eq {
