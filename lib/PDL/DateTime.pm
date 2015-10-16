@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use parent 'PDL';
 
-our $VERSION = '0.001';
+our $VERSION = '0.001_01';
 
 use Scalar::Util 'looks_like_number';
 use POSIX ();
