@@ -1,9 +1,10 @@
+use 5.010;
 use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 use Config;
 
-die "FATAL: Your perl does not support 64bit integers!\n" if $Config{ivsize} < 8;
+warn "FATAL: Your perl does not support 64bit integers!\n" and exit(0) if $Config{ivsize} < 8;
  
 WriteMakefile(
   NAME          => 'PDL::DateTime',
@@ -29,7 +30,6 @@ WriteMakefile(
   },
   dist => {
       ($^O eq 'MSWin32' ? (TAR => 'ptar', TARFLAGS => '-c -C -f') : ()),
-      #PREOP => 'pod2text lib/PDL/DateTime.pod > README'
       PREOP => 'perldoc -u lib/PDL/DateTime.pod | pod2markdown > README.md',
   },
 );

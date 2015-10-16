@@ -4,7 +4,7 @@ PDL::DateTime - piddle for keeping high precision (microsecond) timestamps
 
 =head1 DESCRIPTION
 
-L<PDL::DateTime> is a subclass of L<PDL> piddle:
+L<PDL::DateTime> is a subclass of L<PDL> piddle for storing date-time values (scalar piddles, vectors, matrices or generally ND-piddles):
 
 =over
 
@@ -24,7 +24,7 @@ L<PDL::DateTime> is a subclass of L<PDL> piddle:
 
 =item * leap seconds are completely ignored
 
-=item * no timezone handling (module uses UTC)
+=item * no timezone handling (module uses GMT, date time values without offset/timezone are considered to be GMT)
 
 =item * this module works only on perls with 64-bit integers, check C<perl -V:ivsize> (should be C<ivsize='8'>)
 
@@ -109,6 +109,12 @@ See L<https://en.wikipedia.org/wiki/Julian_day>
 
  my $p = PDL::DateTime->new_from_datetime($array_ref);
  # input data = array of ISO 8601 date time strings
+
+ my $dt = PDL::DateTime->new_from_datetime([
+    [ '2015-09-20T15:45', '2015-09-20T16:45', '2015-09-20T17:45' ],
+    [ '2016-09-20T15:45', '2016-09-20T16:45', '2016-09-20T17:45' ],
+    [ '2017-09-20T15:45', '2017-09-20T16:45', '2017-09-20T17:45' ],
+ ]);
 
 Supported formats - see L<Time::Moment|Time::Moment/from_string>.
 
@@ -250,7 +256,10 @@ Supported formats - see L<Time::Moment|Time::Moment/from_string>.
  # turns e.g. 2015-08-20T23:24:25.123456Z
  # into       2015-08-20T23:24:00.000000Z
 
- # for units 'year', 'quarter', 'month' there is second optional param
+ my $p->dt_align($unit, $upper); #second optional param
+ # $upper .. 1 or 0 (default), align to upper boundary (end of period)
+ #           only for 'year', 'quarter', 'month', 'week'
+
  # let's have: 2015-08-20T23:24:25.123456Z
  $p->dt_align('year');       # -> 2015-01-01
  $p->dt_align('year', 1);    # -> 2015-12-31 (the last day of year)
@@ -380,6 +389,8 @@ Combines L</dt_startpoints> and L</dt_endpoints> and returns 2D piddle like this
  #  [0 2]
  #  [3 7]
  # ]
+
+The piddle returned by this function can be passed to L<apply_slice|PDL::Apply/apply_slice>.
 
 =head2 dt_nperiods
 

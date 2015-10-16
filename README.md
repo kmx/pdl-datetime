@@ -4,7 +4,7 @@ PDL::DateTime - piddle for keeping high precision (microsecond) timestamps
 
 # DESCRIPTION
 
-[PDL::DateTime](https://metacpan.org/pod/PDL::DateTime) is a subclass of [PDL](https://metacpan.org/pod/PDL) piddle:
+[PDL::DateTime](https://metacpan.org/pod/PDL::DateTime) is a subclass of [PDL](https://metacpan.org/pod/PDL) piddle for storing date-time values (scalar piddles, vectors, matrices or generally ND-piddles):
 
 - its PDL type is always `LongLong` (64-bit signed integer)
 - **stored values are microseconds** since `1970-01-01T00:00:00.000000Z` (can be both positive or negative)
@@ -14,7 +14,7 @@ PDL::DateTime - piddle for keeping high precision (microsecond) timestamps
 
 - supported datetimes are from `0001-01-01T00:00:00.000000Z` (epoch microseconds: `-62135596800000000`) to `9999-12-31T23:59:59.999999Z` (epoch microseconds: `253402300799999999`)
 - leap seconds are completely ignored
-- no timezone handling (module uses UTC)
+- no timezone handling (module uses GMT, date time values without offset/timezone are considered to be GMT)
 - this module works only on perls with 64-bit integers, check `perl -V:ivsize` (should be `ivsize='8'`)
 - no chance for nanoseconds precision, maybe in a separate module e.g. `PDL::DateTime::Ns`
 
@@ -95,6 +95,12 @@ See [https://en.wikipedia.org/wiki/Julian\_day](https://en.wikipedia.org/wiki/Ju
 
     my $p = PDL::DateTime->new_from_datetime($array_ref);
     # input data = array of ISO 8601 date time strings
+
+    my $dt = PDL::DateTime->new_from_datetime([
+       [ '2015-09-20T15:45', '2015-09-20T16:45', '2015-09-20T17:45' ],
+       [ '2016-09-20T15:45', '2016-09-20T16:45', '2016-09-20T17:45' ],
+       [ '2017-09-20T15:45', '2017-09-20T16:45', '2017-09-20T17:45' ],
+    ]);
 
 Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#from_string).
 
@@ -236,7 +242,10 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     # turns e.g. 2015-08-20T23:24:25.123456Z
     # into       2015-08-20T23:24:00.000000Z
 
-    # for units 'year', 'quarter', 'month' there is second optional param
+    my $p->dt_align($unit, $upper); #second optional param
+    # $upper .. 1 or 0 (default), align to upper boundary (end of period)
+    #           only for 'year', 'quarter', 'month', 'week'
+
     # let's have: 2015-08-20T23:24:25.123456Z
     $p->dt_align('year');       # -> 2015-01-01
     $p->dt_align('year', 1);    # -> 2015-12-31 (the last day of year)
@@ -366,6 +375,8 @@ Combines ["dt\_startpoints"](#dt_startpoints) and ["dt\_endpoints"](#dt_endpoint
     #  [0 2]
     #  [3 7]
     # ]
+
+The piddle returned by this function can be passed to [apply\_slice](https://metacpan.org/pod/PDL::Apply#apply_slice).
 
 ## dt\_nperiods
 
