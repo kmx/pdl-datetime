@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use parent 'PDL';
 
-our $VERSION = '0.001_01';
+our $VERSION = '0.002';
 
 use Scalar::Util 'looks_like_number';
 use POSIX ();
@@ -238,9 +238,32 @@ sub double_juliandate {
 
 sub dt_ymd {
   my $self = shift;
-  my $rdate = $self->double_ratadie;
-  my ($y, $m, $d) = _ratadie2ymd($rdate);
+  my ($y, $m, $d) = _ratadie2ymd($self->double_ratadie);
   return (short($y), byte($m), byte($d));
+}
+
+sub dt_year {
+  my $self = shift;
+  my ($y, undef, undef) = _ratadie2ymd($self->double_ratadie);
+  return short($y);
+}
+
+sub dt_quarter {
+  my $self = shift;
+  my (undef, $m, undef) = _ratadie2ymd($self->double_ratadie);
+  return ((byte($m)-1) / 3) + 1;
+}
+
+sub dt_month {
+  my $self = shift;
+  my (undef, $m, undef) = _ratadie2ymd($self->double_ratadie);
+  return byte($m);
+}
+
+sub dt_day {
+  my $self = shift;
+  my (undef, undef, $d) = _ratadie2ymd($self->double_ratadie);
+  return byte($d);
 }
 
 sub dt_hour {
@@ -812,12 +835,21 @@ sub _ratadie2ymd {
   return ($y, $m, $d);
 }
 
+sub _is_non_leap_year {
+  my $y = shift;
+  return (($y % 4)!=0) + (($y % 100)==0) - (($y % 400)==0);
+}
+
+sub _days_in_year {
+  my $y = shift;
+  return 366 - _is_non_leap_year($y);
+}
+
 sub _days_in_month {
   my ($y, $m) = @_;
   my $dec_simple = (2*($m==2) + ($m==4) + ($m==6) + ($m==9) + ($m==11));
-  my $is_nonleap_yr = (($y % 4)!=0) + (($y % 100)==0) - (($y % 400)==0);
-  my $dec_nonleap_feb  = ($m==2) * $is_nonleap_yr;
-  return - $dec_simple - $dec_nonleap_feb + 31;
+  my $dec_nonleap_feb  = ($m==2) * _is_non_leap_year($y);
+  return 31 - $dec_simple - $dec_nonleap_feb;
 }
 
 1;

@@ -1,6 +1,6 @@
 # NAME
 
-PDL::DateTime - piddle for keeping high precision (microsecond) timestamps
+PDL::DateTime - A piddle for keeping high precision (microsecond) timestamps
 
 # DESCRIPTION
 
@@ -174,7 +174,30 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
     # BEWARE: precision loss, before exporting the time is truncated to miliseconds!
     # returns Double piddle
 
+## dt\_year
+
+    my $y = $p->dt_year;
+    # returns: $y Short piddle (values 1 .. 9999)
+
+## dt\_quarter
+
+    my $m = $p->dt_quarter;
+    # returns: $m Byte piddle (values 1 .. 4)
+
+## dt\_month
+
+    my $m = $p->dt_month;
+    # returns: $m Byte piddle (values 1 .. 12)
+
+## dt\_day
+
+    my $d = $p->dt_day;
+    # returns: $d Byte piddle (values 1 .. 31)
+
 ## dt\_ymd
+
+If you need all `year`, `month` and `day` values it is more effective to use one `dt_ymd` call
+instead of separately calling `dt_year`, `dt_month` and `dt_day`.
 
     my ($y, $m, $d) = $p->dt_ymd;
     # returns 3 piddles: $y Short, $m Byte, $d Byte
@@ -207,7 +230,7 @@ Supported formats - see [Time::Moment](https://metacpan.org/pod/Time::Moment#fro
 ## dt\_day\_of\_year
 
     my $wd = $p->dt_day_of_year;
-    # returns Short piddle (values 1..366)
+    # returns Short piddle (values 1 .. 366)
 
 ## dt\_add
 

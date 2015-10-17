@@ -125,4 +125,6 @@ for (@data) {
   is_deeply($dt->dt_unpdl, \@d, "month spec4");
 }
 
+is_deeply(PDL::DateTime->new_sequence('2014-12-05', 15, 'month')->dt_quarter->unpdl, [4,1,1,1,2,2,2,3,3,3,4,4,4,1,1]);
+
 done_testing;
