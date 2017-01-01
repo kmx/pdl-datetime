@@ -25,11 +25,12 @@ WriteMakefile(
   MIN_PERL_VERSION => '5.010', # same as PDL 2.013+
   META_MERGE => {
       resources    => {
-          repository   => 'https://github.com/kmx/pdl-datetime',
+          repository => 'https://github.com/kmx/pdl-datetime',
+          bugtracker => 'https://github.com/kmx/pdl-datetime/issues',
       },
   },
   dist => {
-      ($^O eq 'MSWin32' ? (TAR => 'ptar', TARFLAGS => '-c -C -f') : ()),
+      ($^O eq 'MSWin32' ? (TAR => 'ptar', TARFLAGS => '-c -C -f') : (TARFLAGS => '--owner=0 --group=0 -cvf')),
       PREOP => 'perldoc -u lib/PDL/DateTime.pod | pod2markdown > README.md',
   },
 );
