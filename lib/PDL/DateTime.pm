@@ -447,8 +447,9 @@ sub dt_diff {
 
 sub dt_periodicity {
   my $self = shift;
+  return '' if !$self->is_increasing && !$self->is_decreasing;
   my $freq = $self->qsort->dt_diff->median;
-  return '' if $freq eq 'BAD';
+  return '' if $freq eq 'BAD' || $freq < 0;
   if ($freq < 1_000 ) {
     # $freq < 1 millisecond
     return "microsecond";
