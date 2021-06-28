@@ -406,7 +406,7 @@ sub dt_align {
 sub dt_at {
   my $self = shift;
   my $fmt = looks_like_number($_[-1]) ? 'auto' : pop;
-  my $v = PDL::Core::at_c($self, [@_]);
+  my $v = PDL::Core::at_bad_c($self, [@_]);
   $fmt = $self->_autodetect_strftime_format if !$fmt || $fmt eq 'auto';
   return _jumboepoch_to_datetime($v, $fmt);
 }
